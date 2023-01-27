@@ -162,7 +162,16 @@ static struct Token lex_identifier(const char** current) {
       if(len > 1) {
         switch(literal[1]) {
           case 'a': return check_keyword(literal, 2, 3, "lse", TOKEN_FALSE);
-          case 'l': break; // TODO: FLOAT TYPES
+          case 'l':
+            if(len >= 6 && literal[2] == 'o' && literal[3] == 'a'
+                && literal[4] == 't') {
+              if(len == 6 && literal[5] == '8') return TOKEN_NEW(TOKEN_FLOAT8);
+              switch(literal[5]) {
+                case '1': return check_keyword(literal, 6, 1, "6", TOKEN_FLOAT16);
+                case '3': return check_keyword(literal, 6, 1, "2", TOKEN_FLOAT32);
+                case '6': return check_keyword(literal, 6, 1, "4", TOKEN_FLOAT64);
+              }
+            } break;
           case 'o': return check_keyword(literal, 2, 1, "r", TOKEN_FOR);
           case 's': return check_keyword(literal, 2, 3, "ize", TOKEN_FSIZE);
           case 'u': return check_keyword(literal, 2, 6, "nction", TOKEN_FUNCTION);
@@ -212,7 +221,19 @@ static struct Token lex_identifier(const char** current) {
     case 'u': // uint union usize
       if(len > 1) {
         switch(literal[1]) {
-          case 'i': break; // TODO: UINT
+          case 'i':
+            if(len == 5 && literal[2] == 'n' && literal[3] == 't'
+                && literal[4] == '8') {
+              free(literal);
+              return TOKEN_NEW(TOKEN_UINT8);
+            }
+            if(len > 5 && literal[2] == 'n' && literal[3] == 't') {
+              switch(literal[4]) {
+                case '1': return check_keyword(literal, 5, 1, "6", TOKEN_UINT16);
+                case '3': return check_keyword(literal, 5, 1, "2", TOKEN_UINT32);
+                case '6': return check_keyword(literal, 5, 1, "4", TOKEN_UINT64);
+              }
+            } break;
           case 'n': return check_keyword(literal, 2, 3, "ion", TOKEN_UNION);
           case 's': return check_keyword(literal, 2, 3, "ize", TOKEN_USIZE);
         }
