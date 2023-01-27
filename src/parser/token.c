@@ -89,7 +89,7 @@ const char* token_strings[TOKEN_EOF] = {
   "TOKEN_UINT16",
   "TOKEN_UINT32",
   "TOKEN_UINT64",
-  "TOKEN_UIIZE",
+  "TOKEN_USIZE",
   "TOKEN_FLOAT8",
   "TOKEN_FLOAT16",
   "TOKEN_FLOAT32",
