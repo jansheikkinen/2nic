@@ -12,7 +12,6 @@ struct AST* parse_file(const char* filename) {
   const char* program = read_file(filename);
   parser.program_index = program;
 
-
   printf("%24s | %s\n", "TOKEN TYPE", "LITERAL");
   struct Token token;
   while((token = lex_token(&parser.program_index)).type != TOKEN_EOF) {

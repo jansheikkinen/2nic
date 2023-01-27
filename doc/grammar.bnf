@@ -1,0 +1,48 @@
+
+program = { include | declaration } EOF ;
+
+include = "include" IDENTIFIER ;
+declaration = struct | enum | union | function | variable ;
+
+
+struct = "struct" IDENTIFIER? "{" { var_decl ";" } "}" ;
+union = "union" IDENTIFIER? "{" { var_decl ";" } "}" ;
+enum = "enum" IDENTIFIER? "{" { IDENTIFIER "=" rvalue_list } "}" ;
+function = "function" IDENTIFIER "(" (lvalue_list | void) ")" (type | void)
+            [ "where" rvalue_list ] block ;
+variable = "let" var_decl ";" ;
+
+
+expression = cast | "undefined" | statement ;
+
+statement = if | while | for | block ;
+builtin = ("continue" | "return" | "break") "(" expression ")"
+block = "{" { (statement ";" | declaration) } expression? "}" ;
+if = "if" "(" expression ")" expression [ else ] ;
+while = "while" "(" expression ")" expression [ else ] ;
+for = "for" "(" [ expression ";" ] [ expression? ";" ] expression ")" expression [ else ] ;
+else = "else" expression ;'
+
+cast = cast "as" type | assignment ;
+assignment = [ call ("." | "->") ] IDENTIFIER assign_ops assignment | logic_or ;
+assign_ops = "=" | ? any binary operator + "=" ? ;
+logic_or = logic_and { "or" logic_and } ;
+logic_and = equality { "and" equality } ;
+equality = comparison { ("==" | "!=") comparison } ;
+comparison = bitwise { ("<" | "<=" | ">" | ">=") bitwise } ;
+bitwise = term { ("&" | "|" | "^" | "<<" | ">>") term } ;
+term = factor { ("-" | "-%" | "+" | "+%") factor } ;
+factor = unary { ("*" | "*%" | "/" | "%") unary } ;
+unary = ("not" | "!" | "-" | "*" | "&") unary | call ;
+call = primary { "(" rvalue_list? ")" ("." | "->") IDENTIFIER
+     | "[" expression "]" } ;
+primary = "(" expression ")" | NUMBER | STRING | CHARACTER | "true" | "false"
+        | "{" rvalue_list "}" ;
+
+
+var_decl = lvalue_list "=" rvalue_list ;
+
+lvalue_list = lvalue { "," lvalue } ;
+lvalue = IDENTIFIER [ ":" type ] ;
+
+rvalue_list = expression { "," expression } ;
