@@ -116,17 +116,17 @@ struct Token {
 extern const char* token_strings[TOKEN_EOF];
 #define TOKEN_STR(token) (token_strings[(token)->type])
 
-#define _NEW_TOKEN(type, as) (struct Token){ type, { as }}
+#define _NEW_TOKEN(type, as) (struct Token){ type, as }
 
-#define TOKEN_NEW(type) _NEW_TOKEN(type, NULL)
+#define TOKEN_NEW(type) _NEW_TOKEN(type, { NULL })
 
-#define TOKEN_NEW_ERROR(lit)      _NEW_TOKEN(TOKEN_ERROR,          lit)
-#define TOKEN_NEW_IDENTIFIER(lit) _NEW_TOKEN(TOKEN_IDENTIFIER_LIT, lit)
-#define TOKEN_NEW_STRING(lit)     _NEW_TOKEN(TOKEN_STRING_LIT,     lit)
-#define TOKEN_NEW_INT(lit)        _NEW_TOKEN(TOKEN_INT_LIT,        lit)
-#define TOKEN_NEW_UINT(lit)       _NEW_TOKEN(TOKEN_UINT_LIT,       lit)
-#define TOKEN_NEW_FLOAT(lit)      _NEW_TOKEN(TOKEN_FLOAT_LIT,      lit)
-#define TOKEN_NEW_CHAR(lit)       _NEW_TOKEN(TOKEN_CHAR_LIT,       lit)
-#define TOKEN_NEW_BOOL(lit)       _NEW_TOKEN(TOKEN_BOOL_LIT,       lit)
+#define TOKEN_NEW_IDENTIFIER(lit) _NEW_TOKEN(TOKEN_IDENTIFIER_LIT,    { lit })
+#define TOKEN_NEW_ERROR(lit)      _NEW_TOKEN(TOKEN_ERROR,             { lit })
+#define TOKEN_NEW_STRING(lit)     _NEW_TOKEN(TOKEN_STRING_LIT,        { lit })
+#define TOKEN_NEW_INT(lit)   _NEW_TOKEN(TOKEN_INT_LIT,   { .integer   = lit })
+#define TOKEN_NEW_UINT(lit)  _NEW_TOKEN(TOKEN_UINT_LIT,  { .uinteger  = lit })
+#define TOKEN_NEW_FLOAT(lit) _NEW_TOKEN(TOKEN_FLOAT_LIT, { .floating  = lit })
+#define TOKEN_NEW_CHAR(lit)  _NEW_TOKEN(TOKEN_CHAR_LIT,  { .character = lit })
+#define TOKEN_NEW_BOOL(lit)  _NEW_TOKEN(TOKEN_BOOL_LIT,  { .boolean   = lit })
 
 #endif
