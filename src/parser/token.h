@@ -1,5 +1,4 @@
-#ifndef PARSER_TOKEN_H
-#define PARSER_TOKEN_H
+#pragma once
 
 #include <stdbool.h>
 #include "../util/arraylist.h"
@@ -49,6 +48,7 @@ enum TokenType {
   TOKEN_LOGIC_XOR,
 
   TOKEN_FUNCTION,
+  TOKEN_WHERE,
   TOKEN_STRUCT,
   TOKEN_ENUM,
   TOKEN_UNION,
@@ -128,5 +128,3 @@ extern const char* token_strings[TOKEN_EOF];
 #define TOKEN_NEW_FLOAT(lit) _NEW_TOKEN(TOKEN_FLOAT_LIT, { .floating  = lit })
 #define TOKEN_NEW_CHAR(lit)  _NEW_TOKEN(TOKEN_CHAR_LIT,  { .character = lit })
 #define TOKEN_NEW_BOOL(lit)  _NEW_TOKEN(TOKEN_BOOL_LIT,  { .boolean   = lit })
-
-#endif

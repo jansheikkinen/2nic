@@ -64,6 +64,7 @@ const char* token_strings[TOKEN_EOF] = {
   "TOKEN_LOGIC_OR",
   "TOKEN_LOGIC_XOR",
   "TOKEN_FUNCTION",
+  "TOKEN_WHERE",
   "TOKEN_STRUCT",
   "TOKEN_ENUM",
   "TOKEN_UNION",

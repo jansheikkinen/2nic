@@ -1,5 +1,4 @@
-#ifndef ARRAYLIST_H
-#define ARRAYLIST_H
+#pragma once
 
 #include <stdlib.h>
 
@@ -32,5 +31,3 @@
 
 #define FREE_SELF_AND_MEMBERS(list, freefn) \
   do { FREE_MEMBERS(list, freefn); free(list); } while(0)
-
-#endif

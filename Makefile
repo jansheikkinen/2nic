@@ -1,5 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -g $(LIBS)
+CFLAGS = -Wall -Wextra -Wformat=2 -Wshadow \
+				 -Wwrite-strings -Wstrict-prototypes -g $(LIBS)
+ifeq ($(CC),gcc)
+	CFLAGS += -Wjump-misses-init -Wlogical-op
+endif
 INCLUDE = -Iinclude
 
 SRC = $(wildcard src/*.c) $(wildcard src/**/*.c)

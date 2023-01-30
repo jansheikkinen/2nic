@@ -135,7 +135,13 @@ static struct Token lex_identifier(const char** current) {
     case 'r': return check_keyword(literal, 1, 5, "eturn", TOKEN_RETURN);
     case 's': return check_keyword(literal, 1, 5, "truct", TOKEN_STRUCT);
     case 'v': return check_keyword(literal, 1, 3, "oid", TOKEN_VOID);
-    case 'w': return check_keyword(literal, 1, 4, "hile", TOKEN_WHILE);
+    case 'w':
+      if(len > 2 && literal[1] == 'h') {
+        switch(literal[2]) {
+          case 'e': return check_keyword(literal, 3, 2, "re", TOKEN_WHERE);
+          case 'i': return check_keyword(literal, 3, 2, "le", TOKEN_WHILE);
+        }
+      } break;
     case 'b':
       if(len > 1) { // bool break
         switch(literal[1]) {
@@ -244,7 +250,9 @@ static struct Token lex_identifier(const char** current) {
   return TOKEN_NEW_IDENTIFIER(literal);
 }
 
-struct Token lex_token(const char** current) {
+struct Token lex_token(struct Parser* parser) {
+  const char** current = &parser->program_index;
+
   skip_whitespace(current);
   if(**current == '\0') return TOKEN_NEW(TOKEN_EOF);
 

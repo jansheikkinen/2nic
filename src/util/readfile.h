@@ -1,9 +1,6 @@
-#ifndef READFILE_H
-#define READFILE_H
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
 
 char* read_file(const char*);
-
-#endif
