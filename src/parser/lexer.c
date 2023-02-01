@@ -5,82 +5,86 @@
 #include <stdio.h>
 #include <string.h>
 
-static inline char next(const char** current) {
-  *current += 1;
-  return *(*current - 1);
+#define CURRENT(parser) ((parser)->program_index)
+
+static inline char next(struct Parser* parser) {
+  CURRENT(parser) += 1;
+  parser->col += 1;
+  return *(CURRENT(parser) - 1);
 }
 
-static inline bool match(const char** current, char expected) {
-  if(**current == '\0' || **current != expected) return false;
-  *current += 1;
+static inline bool match(struct Parser* parser, char expected) {
+  if(*CURRENT(parser) == '\0' || *CURRENT(parser) != expected) return false;
+  CURRENT(parser) += 1;
   return true;
 }
 
-static inline bool is_at_end(const char** current) {
-  return **current == '\0';
+static inline bool is_at_end(const struct Parser* parser) {
+  return *CURRENT(parser) == '\0';
 }
 
-static inline char peek(const char** current) {
-  return **current;
+static inline char peek(const struct Parser* parser) {
+  return *CURRENT(parser);
 }
 
-static inline char over(const char** current) {
-  if(is_at_end(current)) return '\0';
-  return (*current)[1];
+static inline char over(const struct Parser* parser) {
+  if(is_at_end(parser)) return '\0';
+  return *(CURRENT(parser) + 1);
 }
 
-static void skip_whitespace(const char** current) {
+static void skip_whitespace(struct Parser* parser) {
   while(true) {
-    switch(**current) {
+    switch(*CURRENT(parser)) {
+      case '\n': parser->row += 1; parser->col = 0;
+                 __attribute__((fallthrough));
       case ' ':
       case '\r':
-      case '\n':
-      case '\t': next(current); break;
+      case '\t': next(parser); break;
       case '/':
-        if(over(current) == '/')
-          while(peek(current) != '\n' && !is_at_end(current)) next(current);
+        if(over(parser) == '/')
+          while(peek(parser) != '\n' && !is_at_end(parser)) next(parser);
         break;
       default: return;
     }
   }
 }
 
-static inline enum TokenType match_assign(const char** current,
+static inline enum TokenType match_assign(struct Parser* parser,
     enum TokenType start_type) {
-  return match(current, '=') ? start_type + 1 : start_type;
+  return match(parser, '=') ? start_type + 1 : start_type;
 }
 
-static inline enum TokenType match_wrap(const char** current,
+static inline enum TokenType match_wrap(struct Parser* parser,
     char e1, char e2, enum TokenType start_type) {
-  return match(current, e1) ? start_type + 1 :
-    match(current, e2) ? match(current, e1) ?
+  return match(parser, e1) ? start_type + 1 :
+    match(parser, e2) ? match(parser, e1) ?
     start_type + 3 : start_type + 2 : start_type;
 }
 
-static inline enum TokenType match_arrow(const char** current,
+static inline enum TokenType match_arrow(struct Parser* parser,
     enum TokenType t1, enum TokenType t2) {
-  return match(current, '>') ? t2 : match_wrap(current, '=', '%', t1);
+  return match(parser, '>') ? t2 : match_wrap(parser, '=', '%', t1);
 }
 
 // don't forget to free the string :)
-static struct Token lex_string(const char** current) {
-  const char* start = *current;
+static struct Token lex_string(struct Parser* parser) {
+  const char* start = CURRENT(parser);
 
-  while(peek(current) != '"' && !is_at_end(current)) next(current);
-  if(is_at_end(current)) return TOKEN_NEW_ERROR("unterminated string");
+  while(peek(parser) != '"' && !is_at_end(parser)) next(parser);
+  if(is_at_end(parser)) return TOKEN_NEW_ERROR("unterminated string");
 
-  char* literal = calloc(*current - start, sizeof(char));
-  memcpy(literal, start, *current - start);
+  char* literal = calloc(CURRENT(parser) - start, sizeof(char));
+  memcpy(literal, start, CURRENT(parser) - start);
 
-  next(current);
+  next(parser);
   return TOKEN_NEW_STRING(literal);
 }
 
-static struct Token lex_char(const char** current) {
-  if(over(current) == '\'') {
-    char literal = **current;
-    next(current);
-    next(current);
+static struct Token lex_char(struct Parser* parser) {
+  if(over(parser) == '\'') {
+    char literal = *CURRENT(parser);
+    next(parser);
+    next(parser);
 
     return TOKEN_NEW_CHAR(literal);
   }
@@ -88,25 +92,24 @@ static struct Token lex_char(const char** current) {
   return TOKEN_NEW_ERROR("invalid character literal");
 }
 
-static struct Token lex_number(const char** current) {
-  const char* start = *current - 1;
+static struct Token lex_number(struct Parser* parser) {
+  const char* start = CURRENT(parser) - 1;
   bool is_floating = false;
 
-  while(isdigit(peek(current))) next(current);
-  if(peek(current) == '.' && isdigit(over(current))) {
-    next(current); is_floating = true;
-    while(isdigit(peek(current))) next(current);
+  while(isdigit(peek(parser))) next(parser);
+  if(peek(parser) == '.' && isdigit(over(parser))) {
+    next(parser); is_floating = true;
+    while(isdigit(peek(parser))) next(parser);
   }
 
-  char buf[*current - start];
-  memset(buf, '\0', *current - start);
-  memcpy(buf, start, *current - start);
+  char buf[CURRENT(parser) - start];
+  memset(buf, '\0', CURRENT(parser) - start);
+  memcpy(buf, start, CURRENT(parser) - start);
 
   if(is_floating) return TOKEN_NEW_FLOAT(strtod(buf, NULL));
   else {
     long long literal = strtoll(buf, NULL, 0);
-    if(literal < 0) return TOKEN_NEW_INT(literal);
-    else return TOKEN_NEW_UINT(literal);
+    return TOKEN_NEW_INT(literal);
   }
 }
 
@@ -120,12 +123,12 @@ static struct Token check_keyword(const char* word, size_t start, size_t length,
   return TOKEN_NEW_IDENTIFIER(word);
 }
 
-static struct Token lex_identifier(const char** current) {
-  const char* start = *current - 1;
+static struct Token lex_identifier(struct Parser* parser) {
+  const char* start = CURRENT(parser) - 1;
 
-  while(isalnum(peek(current)) || peek(current) == '_') next(current);
+  while(isalnum(peek(parser)) || peek(parser) == '_') next(parser);
 
-  size_t len = *current - start;
+  size_t len = CURRENT(parser) - start;
   char* literal = calloc(len, sizeof(char));
   memcpy(literal, start, len);
 
@@ -251,14 +254,12 @@ static struct Token lex_identifier(const char** current) {
 }
 
 struct Token lex_token(struct Parser* parser) {
-  const char** current = &parser->program_index;
+  skip_whitespace(parser);
+  if(*CURRENT(parser) == '\0') return TOKEN_NEW(TOKEN_EOF);
 
-  skip_whitespace(current);
-  if(**current == '\0') return TOKEN_NEW(TOKEN_EOF);
-
-  char c = next(current);
-  if(isdigit(c)) return lex_number(current);
-  if(isalpha(c) || c == '_') return lex_identifier(current);
+  char c = next(parser);
+  if(isdigit(c)) return lex_number(parser);
+  if(isalpha(c) || c == '_') return lex_identifier(parser);
 
   switch(c) {
     case '(':  return TOKEN_NEW(TOKEN_LEFT_PAREN);
@@ -272,20 +273,20 @@ struct Token lex_token(struct Parser* parser) {
     case '.':  return TOKEN_NEW(TOKEN_DOT);
     case ',':  return TOKEN_NEW(TOKEN_COMMA);
     case '#':  return TOKEN_NEW(TOKEN_HASHTAG);
-    case '+':  return TOKEN_NEW(match_wrap(current, '=', '%', TOKEN_ADD));
-    case '-':  return TOKEN_NEW(match_arrow(current, TOKEN_SUB, TOKEN_ARROW));
-    case '*':  return TOKEN_NEW(match_wrap(current, '=', '%', TOKEN_MUL));
-    case '/':  return TOKEN_NEW(match_assign(current, TOKEN_DIV));
-    case '%':  return TOKEN_NEW(match_assign(current, TOKEN_MOD));
-    case '<':  return TOKEN_NEW(match_wrap(current, '=', '<', TOKEN_LT));
-    case '>':  return TOKEN_NEW(match_wrap(current, '=', '>', TOKEN_GT));
-    case '&':  return TOKEN_NEW(match_assign(current, TOKEN_BIT_AND));
-    case '|':  return TOKEN_NEW(match_assign(current, TOKEN_BIT_OR));
-    case '^':  return TOKEN_NEW(match_assign(current, TOKEN_BIT_XOR));
-    case '!':  return TOKEN_NEW(match_assign(current, TOKEN_BIT_NOT));
-    case '=':  return TOKEN_NEW(match_arrow(current, TOKEN_EQ, TOKEN_EQ_ARROW));
-    case '"':  return lex_string(current);
-    case '\'': return lex_char(current);
+    case '+':  return TOKEN_NEW(match_wrap(parser, '=', '%', TOKEN_ADD));
+    case '-':  return TOKEN_NEW(match_arrow(parser, TOKEN_SUB, TOKEN_ARROW));
+    case '*':  return TOKEN_NEW(match_wrap(parser, '=', '%', TOKEN_MUL));
+    case '/':  return TOKEN_NEW(match_assign(parser, TOKEN_DIV));
+    case '%':  return TOKEN_NEW(match_assign(parser, TOKEN_MOD));
+    case '<':  return TOKEN_NEW(match_wrap(parser, '=', '<', TOKEN_LT));
+    case '>':  return TOKEN_NEW(match_wrap(parser, '=', '>', TOKEN_GT));
+    case '&':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_AND));
+    case '|':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_OR));
+    case '^':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_XOR));
+    case '!':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_NOT));
+    case '=':  return TOKEN_NEW(match_arrow(parser, TOKEN_EQ, TOKEN_EQ_ARROW));
+    case '"':  return lex_string(parser);
+    case '\'': return lex_char(parser);
   }
 
   return TOKEN_NEW_ERROR(&c);

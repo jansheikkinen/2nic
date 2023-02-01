@@ -8,7 +8,6 @@ enum TokenType {
 
   TOKEN_IDENTIFIER_LIT,
   TOKEN_STRING_LIT,
-  TOKEN_UINT_LIT,
   TOKEN_INT_LIT,
   TOKEN_FLOAT_LIT,
   TOKEN_CHAR_LIT,
@@ -105,8 +104,7 @@ struct Token {
   enum TokenType type;
   union {
     const char* string;
-    size_t uinteger;
-    ssize_t integer;
+    size_t integer;
     double floating;
     char character;
     bool boolean;
@@ -124,7 +122,6 @@ extern const char* token_strings[TOKEN_EOF];
 #define TOKEN_NEW_ERROR(lit)      _NEW_TOKEN(TOKEN_ERROR,             { lit })
 #define TOKEN_NEW_STRING(lit)     _NEW_TOKEN(TOKEN_STRING_LIT,        { lit })
 #define TOKEN_NEW_INT(lit)   _NEW_TOKEN(TOKEN_INT_LIT,   { .integer   = lit })
-#define TOKEN_NEW_UINT(lit)  _NEW_TOKEN(TOKEN_UINT_LIT,  { .uinteger  = lit })
 #define TOKEN_NEW_FLOAT(lit) _NEW_TOKEN(TOKEN_FLOAT_LIT, { .floating  = lit })
 #define TOKEN_NEW_CHAR(lit)  _NEW_TOKEN(TOKEN_CHAR_LIT,  { .character = lit })
 #define TOKEN_NEW_BOOL(lit)  _NEW_TOKEN(TOKEN_BOOL_LIT,  { .boolean   = lit })
