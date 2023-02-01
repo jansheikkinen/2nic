@@ -96,8 +96,9 @@ static struct Expression* parse_unary(struct Parser* parser) {
 static struct Expression* parse_##name(struct Parser* parser) { \
   struct Expression* left = parse_##prev(parser); \
   while(condition) { \
+    enum TokenType op = parser->previous.type; \
     struct Expression* right = parse_##prev(parser); \
-    left = alloc_binary(parser->previous.type, left, right); \
+    left = alloc_binary(op, left, right); \
   } \
   return left; \
 }
@@ -181,7 +182,6 @@ static void print_binary(const struct Binary* ast, size_t indent) {
   printf("%s\n", token_strings[ast->op]);
   print_expression(ast->left, indent + 1);
   print_expression(ast->right, indent + 1);
-  printf("\n");
 }
 
 void print_expression(const struct Expression* ast, size_t indent) {
@@ -194,5 +194,4 @@ void print_expression(const struct Expression* ast, size_t indent) {
     case EXPR_UNARY:   return print_unary(&ast->as.unary, indent + 1);
     case EXPR_BINARY:  return print_binary(&ast->as.binary, indent + 1);
   }
-  printf("\n");
 }
