@@ -55,10 +55,10 @@ struct AST* parse_file(const char*);
     (parser)->current = lex_token(parser); true; }) : false)
 
 #define EXPECT_TOKEN(parser, _type, error) { \
-  if(MATCH_TOKEN(parser, TOKEN_ERROR)) \
+  if(MATCH_TOKEN(parser, ERROR)) \
     return RETURN_ERROR(parser, (parser)->current.as.integer); \
   if(!MATCH_TOKEN(parser, _type)) \
-    return RETURN_ERROR(parser, error); \
+    return RETURN_ERROR(parser, ERROR_##error); \
   } while(0)
 
 #define PRINT_INDENT(indent) \

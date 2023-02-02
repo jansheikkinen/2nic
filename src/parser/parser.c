@@ -65,15 +65,16 @@ struct AST* parse_file(const char* filename) {
   while((parser.current = lex_token(&parser)).type != TOKEN_EOF) {
     APPEND_ARRAYLIST(ast, parse_expression(&parser));
 
-    // printf("%24s (%02zu, %02zu) | ", TOKEN_STR(&parser.token), parser.row, parser.col);
+    // printf("%24s %02u (%02zu, %02zu) | ", TOKEN_STR(&parser.current), parser.current.type,
+    //     parser.row, parser.col);
     //
-    // switch(parser.token.type) {
+    // switch(parser.current.type) {
     //   case TOKEN_IDENTIFIER_LIT:
-    //   case TOKEN_STRING_LIT: printf("\"%s\"",  parser.token.as.string);    break;
-    //   case TOKEN_INT_LIT:    printf("%zd",     parser.token.as.integer);   break;
-    //   case TOKEN_FLOAT_LIT:  printf("%f",      parser.token.as.floating);  break;
-    //   case TOKEN_CHAR_LIT:   printf("'%c'",    parser.token.as.character); break;
-    //   case TOKEN_BOOL_LIT:   printf("%d",      parser.token.as.boolean);   break;
+    //   case TOKEN_STRING_LIT: printf("\"%s\"",parser.current.as.string);   break;
+    //   case TOKEN_INT_LIT:    printf("%zd",   parser.current.as.integer);  break;
+    //   case TOKEN_FLOAT_LIT:  printf("%f",    parser.current.as.floating); break;
+    //   case TOKEN_CHAR_LIT:   printf("'%c'",  parser.current.as.character);break;
+    //   case TOKEN_BOOL_LIT:   printf("%d",    parser.current.as.boolean);  break;
     //   default: break;
     // }
     // printf("\n");

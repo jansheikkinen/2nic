@@ -133,8 +133,10 @@ static struct Token lex_identifier(struct Parser* parser) {
   memcpy(literal, start, len);
 
   switch(literal[0]) {
+    case 'a': return check_keyword(literal, 1, 2, "nd", TOKEN_LOGIC_AND);
     case 'l': return check_keyword(literal, 1, 2, "et", TOKEN_LET);
     case 'n': return check_keyword(literal, 1, 7, "oreturn", TOKEN_NORETURN);
+    case 'o': return check_keyword(literal, 1, 1, "r", TOKEN_LOGIC_OR);
     case 'r': return check_keyword(literal, 1, 5, "eturn", TOKEN_RETURN);
     case 's': return check_keyword(literal, 1, 5, "truct", TOKEN_STRUCT);
     case 'v': return check_keyword(literal, 1, 3, "oid", TOKEN_VOID);
@@ -284,7 +286,7 @@ struct Token lex_token(struct Parser* parser) {
     case '|':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_OR));
     case '^':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_XOR));
     case '!':  return TOKEN_NEW(match_assign(parser, TOKEN_BIT_NOT));
-    case '=':  return TOKEN_NEW(match_arrow(parser, TOKEN_EQ, TOKEN_EQ_ARROW));
+    case '=':  return TOKEN_NEW(match_arrow(parser, TOKEN_ASSIGN, TOKEN_EQ_ARROW));
     case '"':  return lex_string(parser);
     case '\'': return lex_char(parser);
   }

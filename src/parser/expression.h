@@ -28,9 +28,14 @@ struct Binary {
   enum TokenType op;
 };
 
+struct Grouping {
+  struct Expression* expr;
+};
+
 struct Expression {
-  enum { EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY } type;
+  enum { EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP } type;
   union {
+    struct Grouping group;
     struct Binary binary;
     struct Unary unary;
     struct Literal literal;

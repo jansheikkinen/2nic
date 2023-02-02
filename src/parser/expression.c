@@ -62,6 +62,19 @@ static struct Expression* alloc_binary(enum TokenType op,
 
 // ### PARSING FUNCTIONS ## //
 
+static struct Expression* parse_group(struct Parser* parser) {
+  struct Expression* group = malloc(sizeof(*group));
+
+  struct Expression* expr = parse_expression(parser);
+
+  EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_RIGHT_PAREN);
+
+  group->type = EXPR_GROUP;
+
+  if(group) group->as.group.expr = expr;
+  return group;
+}
+
 static struct Expression* parse_primary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, TRUE) || MATCH_TOKEN(parser, FALSE))
     return ALLOC_LITERAL(BOOL,bool,parser->previous.type==TOKEN_TRUE?true:false);
@@ -75,6 +88,8 @@ static struct Expression* parse_primary(struct Parser* parser) {
     return ALLOC_LITERAL(STRING, const char*, parser->previous.as.string);
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     return ALLOC_LITERAL(IDENTIFIER, const char*, parser->previous.as.string);
+  if(MATCH_TOKEN(parser, LEFT_PAREN))
+    return parse_group(parser);
   if(MATCH_TOKEN(parser, ERROR))
     return RETURN_ERROR(parser, parser->previous.as.integer);
   return RETURN_ERROR(parser, ERROR_EXPECTED_EXPRESSION);
@@ -179,11 +194,18 @@ static void print_binary(const struct Binary* ast, size_t indent) {
   PRINT_INDENT(indent);
   printf("BINARY ");
 
-  if(ast == NULL) { printf("NULL\n"); }
+  if(ast == NULL) { printf("NULL\n"); return; }
 
   printf("%s\n", token_strings[ast->op]);
   print_expression(ast->left, indent + 1);
   print_expression(ast->right, indent + 1);
+}
+
+static void print_group(const struct Grouping* ast, size_t indent) {
+  PRINT_INDENT(indent);
+  printf("GROUP\n");
+  if(ast == NULL) { printf("NULL\n"); return; }
+  print_expression(ast->expr, indent + 1);
 }
 
 void print_expression(const struct Expression* ast, size_t indent) {
@@ -195,5 +217,6 @@ void print_expression(const struct Expression* ast, size_t indent) {
     case EXPR_LITERAL: return print_literal(&ast->as.literal, indent + 1);
     case EXPR_UNARY:   return print_unary(&ast->as.unary, indent + 1);
     case EXPR_BINARY:  return print_binary(&ast->as.binary, indent + 1);
+    case EXPR_GROUP:   return print_group(&ast->as.group, indent + 1);
   }
 }
