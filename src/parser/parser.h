@@ -15,11 +15,13 @@ DEFINE_ARRAYLIST(AST, struct Expression*);
 #define ERR_WARN_COLOR COL_MAGENTA
 
 enum ParseErrorType {
-  ERROR_UNDEFINED,
+  ERROR_UNREACHABLE,
 
   ERROR_LEX_UNTERMINATED_STRING,
   ERROR_LEX_INVALID_CHAR_LITERAL,
   ERROR_LEX_INVALID_SYMBOL,
+
+  ERROR_UNEXPECTED_EOF,
 
   ERROR_EXPECTED_DECLARATION,
   ERROR_EXPECTED_EXPRESSION,
@@ -62,4 +64,4 @@ struct AST* parse_file(const char*);
   } while(0)
 
 #define PRINT_INDENT(indent) \
-  for(size_t jfkdla = 0; jfkdla < (indent); jfkdla++) printf(" ");
+  for(size_t jfkdla = 0; jfkdla < (indent); jfkdla++) printf("  ");

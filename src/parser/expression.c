@@ -92,6 +92,8 @@ static struct Expression* parse_primary(struct Parser* parser) {
     return parse_group(parser);
   if(MATCH_TOKEN(parser, ERROR))
     return RETURN_ERROR(parser, parser->previous.as.integer);
+  if(MATCH_TOKEN(parser, EOF))
+    return RETURN_ERROR(parser, ERROR_UNEXPECTED_EOF);
   return RETURN_ERROR(parser, ERROR_EXPECTED_EXPRESSION);
 }
 
@@ -154,7 +156,34 @@ static struct Expression* parse_assign(struct Parser* parser) {
   return parse_cast(parser);
 }
 
+static struct Expression* parse_ifwhile(struct Parser* parser) {
+  struct Expression* expr = malloc(sizeof(*expr));
+
+  switch(parser->previous.type) {
+    case TOKEN_IF: expr->type =    EXPR_IF;    break;
+    case TOKEN_WHILE: expr->type = EXPR_WHILE; break;
+    default: RETURN_ERROR(parser, ERROR_UNREACHABLE); return NULL;
+  }
+
+  struct IfWhile ifwhile;
+
+  EXPECT_TOKEN(parser, LEFT_PAREN, EXPECTED_LEFT_PAREN);
+  ifwhile.condition = parse_expression(parser);
+  EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_RIGHT_PAREN);
+
+  ifwhile.body = parse_expression(parser);
+
+  if(MATCH_TOKEN(parser, ELSE))
+    ifwhile.else_clause = parse_expression(parser);
+
+  expr->as.ifwhile = ifwhile;
+  return expr;
+}
+
 struct Expression* parse_expression(struct Parser* parser) {
+  if(MATCH_TOKEN(parser, IF) || MATCH_TOKEN(parser, WHILE))
+    return parse_ifwhile(parser);
+
   return parse_assign(parser);
 }
 
@@ -162,61 +191,75 @@ struct Expression* parse_expression(struct Parser* parser) {
 
 // ### PRINTING FUNCTIONS ## //
 
-static void print_literal(const struct Literal* ast, size_t indent) {
-  PRINT_INDENT(indent);
+static void print_literal(const struct Literal* ast) {
   printf("LITERAL ");
 
-  if(ast == NULL) { printf("NULL\n"); return; }
+  if(ast == NULL) { printf("(NULL) "); return; }
 
   switch(ast->type) {
-  case LIT_BOOL:       printf("%s", ast->as.boolean? "true" : "false"); break;
-  case LIT_INT:        printf("%zu", ast->as.integer);                  break;
-  case LIT_FLOAT:      printf("%f", ast->as.floating);                  break;
-  case LIT_CHAR:       printf("'%c'", ast->as.character);               break;
-  case LIT_STRING:     printf("\"%s\"", ast->as.string);                break;
-  case LIT_IDENTIFIER: printf("%s", ast->as.string);                    break;
+  case LIT_BOOL:       printf("%s ", ast->as.boolean? "true" : "false"); break;
+  case LIT_INT:        printf("%zu ", ast->as.integer);                  break;
+  case LIT_FLOAT:      printf("%f ", ast->as.floating);                  break;
+  case LIT_CHAR:       printf("'%c' ", ast->as.character);               break;
+  case LIT_STRING:     printf("\"%s\" ", ast->as.string);                break;
+  case LIT_IDENTIFIER: printf("%s ", ast->as.string);                    break;
   }
-  printf("\n");
 }
 
-static void print_unary(const struct Unary* ast, size_t indent) {
-  PRINT_INDENT(indent);
+static void print_unary(const struct Unary* ast) {
   printf("UNARY ");
 
-  if(ast == NULL) { printf("NULL\n"); return; }
+  if(ast == NULL) { printf("(NULL) "); return; }
 
-  printf("%s\n", token_strings[ast->op]);
-  print_expression(ast->operand, indent + 1);
-  printf("\n");
+  printf("%s ", token_strings[ast->op]);
+  print_expression(ast->operand);
 }
 
-static void print_binary(const struct Binary* ast, size_t indent) {
-  PRINT_INDENT(indent);
+static void print_binary(const struct Binary* ast) {
   printf("BINARY ");
 
-  if(ast == NULL) { printf("NULL\n"); return; }
+  if(ast == NULL) { printf("(NULL) "); return; }
 
-  printf("%s\n", token_strings[ast->op]);
-  print_expression(ast->left, indent + 1);
-  print_expression(ast->right, indent + 1);
+  printf("%s ", token_strings[ast->op]);
+  print_expression(ast->left);
+  print_expression(ast->right);
 }
 
-static void print_group(const struct Grouping* ast, size_t indent) {
-  PRINT_INDENT(indent);
-  printf("GROUP\n");
-  if(ast == NULL) { printf("NULL\n"); return; }
-  print_expression(ast->expr, indent + 1);
+static void print_group(const struct Grouping* ast) {
+  printf("GROUP ");
+
+  if(ast == NULL) { printf("(NULL) "); return; }
+  print_expression(ast->expr);
 }
 
-void print_expression(const struct Expression* ast, size_t indent) {
-  PRINT_INDENT(indent);
+static void print_ifwhile(const struct Expression* ast) {
+  if(ast->type == EXPR_IF) printf("IF ");
+  else if(ast->type == EXPR_WHILE) printf("WHILE ");
 
-  if(ast == NULL) { printf("NULL\n"); return; }
+  printf("(COND ");
+  print_expression(ast->as.ifwhile.condition);
+  printf(") ");
+
+  printf("(BODY ");
+  print_expression(ast->as.ifwhile.body);
+  printf(") ");
+
+  printf("(ELSE ");
+  print_expression(ast->as.ifwhile.else_clause);
+  printf(") ");
+}
+
+void print_expression(const struct Expression* ast) {
+  if(ast == NULL) { printf("(NULL) "); return; }
+  else printf("(");
 
   switch(ast->type) {
-    case EXPR_LITERAL: return print_literal(&ast->as.literal, indent + 1);
-    case EXPR_UNARY:   return print_unary(&ast->as.unary, indent + 1);
-    case EXPR_BINARY:  return print_binary(&ast->as.binary, indent + 1);
-    case EXPR_GROUP:   return print_group(&ast->as.group, indent + 1);
+    case EXPR_LITERAL: print_literal(&ast->as.literal); break;
+    case EXPR_UNARY:   print_unary(&ast->as.unary);     break;
+    case EXPR_BINARY:  print_binary(&ast->as.binary);   break;
+    case EXPR_GROUP:   print_group(&ast->as.group);     break;
+    case EXPR_IF:      __attribute__((fallthrough));
+    case EXPR_WHILE:   print_ifwhile(ast);              break;
   }
+  printf(") ");
 }

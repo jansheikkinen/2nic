@@ -2,6 +2,13 @@
 
 #include "parser.h"
 
+
+struct IfWhile {
+  struct Expression* condition;
+  struct Expression* body;
+  struct Expression* else_clause;
+};
+
 enum LiteralType {
   LIT_BOOL, LIT_INT, LIT_FLOAT, LIT_CHAR, LIT_STRING, LIT_IDENTIFIER
 };
@@ -33,8 +40,12 @@ struct Grouping {
 };
 
 struct Expression {
-  enum { EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP } type;
+  enum {
+    EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP,
+    EXPR_IF, EXPR_WHILE
+  } type;
   union {
+    struct IfWhile ifwhile;
     struct Grouping group;
     struct Binary binary;
     struct Unary unary;
@@ -43,4 +54,4 @@ struct Expression {
 };
 
 struct Expression* parse_expression(struct Parser*);
-void print_expression(const struct Expression*, size_t);
+void print_expression(const struct Expression*);

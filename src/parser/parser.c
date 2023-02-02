@@ -12,6 +12,8 @@ const char* error_strings[ERROR_FINAL] = {
   "invalid character literal",
   "invalid symbol",
 
+  "unexpected end of file",
+
   "expected declaration",
   "expected expression",
 
@@ -44,9 +46,10 @@ void print_error(struct Parser* ctx, enum ParseErrorType type) {
 }
 
 static void print_ast(const struct AST* ast) {
-  printf("EXPRESSION:\n");
-  for(size_t i = 0; i < ast->size; i++)
-    print_expression(ast->members[i], 1);
+  for(size_t i = 0; i < ast->size; i++) {
+    print_expression(ast->members[i]);
+    printf("\n");
+  }
 }
 
 struct AST* parse_file(const char* filename) {
