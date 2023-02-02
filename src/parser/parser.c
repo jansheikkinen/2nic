@@ -68,7 +68,8 @@ struct AST* parse_file(const char* filename) {
   while((parser.current = lex_token(&parser)).type != TOKEN_EOF) {
     APPEND_ARRAYLIST(ast, parse_expression(&parser));
 
-    // printf("%24s %02u (%02zu, %02zu) | ", TOKEN_STR(&parser.current), parser.current.type,
+    // printf("%24s %02u (%02zu, %02zu) | ",
+    //     TOKEN_STR(&parser.current), parser.current.type,
     //     parser.row, parser.col);
     //
     // switch(parser.current.type) {
@@ -83,7 +84,7 @@ struct AST* parse_file(const char* filename) {
     // printf("\n");
   }
 
-  if(!parser.didPanic)
+  // if(!parser.didPanic)
     print_ast(ast);
 
   free((char*)program);

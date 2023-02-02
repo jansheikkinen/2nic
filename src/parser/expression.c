@@ -31,6 +31,7 @@ static struct Expression* alloc_literal(enum LiteralType type, void* value) {
   return expr;
 }
 
+
 static struct Expression* alloc_unary(enum TokenType op,
     struct Expression* operand) {
   struct Expression* expr = malloc(sizeof(*expr));
@@ -43,6 +44,7 @@ static struct Expression* alloc_unary(enum TokenType op,
   return expr;
 }
 
+
 static struct Expression* alloc_binary(enum TokenType op,
     struct Expression* left, struct Expression* right) {
   struct Expression* expr = malloc(sizeof(*expr));
@@ -54,6 +56,7 @@ static struct Expression* alloc_binary(enum TokenType op,
 
   return expr;
 }
+
 
 #define ALLOC_LITERAL(tag, _type, value) \
   ({ _type a = value; alloc_literal(LIT_##tag, &a); })
@@ -74,6 +77,7 @@ static struct Expression* parse_group(struct Parser* parser) {
   if(group) group->as.group.expr = expr;
   return group;
 }
+
 
 static struct Expression* parse_primary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, TRUE) || MATCH_TOKEN(parser, FALSE))
@@ -97,9 +101,11 @@ static struct Expression* parse_primary(struct Parser* parser) {
   return RETURN_ERROR(parser, ERROR_EXPECTED_EXPRESSION);
 }
 
+
 static struct Expression* parse_call(struct Parser* parser) {
   return parse_primary(parser);
 }
+
 
 static struct Expression* parse_unary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, BIT_NOT) || MATCH_TOKEN(parser, LOGIC_NOT)
@@ -110,6 +116,7 @@ static struct Expression* parse_unary(struct Parser* parser) {
 
   return parse_call(parser);
 }
+
 
 #define DEFINE_BINARY(name, prev, condition) \
 static struct Expression* parse_##name(struct Parser* parser) { \
@@ -127,6 +134,7 @@ DEFINE_BINARY(factor, unary,
     MATCH_TOKEN(parser, MUL) || MATCH_TOKEN(parser, MUL_WRAP)
     || MATCH_TOKEN(parser, DIV) || MATCH_TOKEN(parser, MOD))
 
+
 DEFINE_BINARY(term, factor,
     MATCH_TOKEN(parser, ADD) || MATCH_TOKEN(parser, ADD_WRAP)
     || MATCH_TOKEN(parser, SUB) || MATCH_TOKEN(parser, SUB_WRAP))
@@ -136,25 +144,52 @@ DEFINE_BINARY(bitwise, term,
     || MATCH_TOKEN(parser, BIT_XOR) || MATCH_TOKEN(parser, BIT_SHR)
     || MATCH_TOKEN(parser, BIT_SHL))
 
+
 DEFINE_BINARY(compare, bitwise,
     MATCH_TOKEN(parser, LT) || MATCH_TOKEN(parser, GT)
     || MATCH_TOKEN(parser, LT_EQ) || MATCH_TOKEN(parser, GT_EQ))
 
+
 DEFINE_BINARY(equal, compare,
     MATCH_TOKEN(parser, EQ) || MATCH_TOKEN(parser, NOT_EQ))
+
 
 DEFINE_BINARY(logic_and, equal, MATCH_TOKEN(parser, LOGIC_AND))
 DEFINE_BINARY(logic_or, logic_and, MATCH_TOKEN(parser, LOGIC_OR))
 
 #undef DEFINE_BINARY
 
+
 static struct Expression* parse_cast(struct Parser* parser) {
   return parse_logic_or(parser);
 }
 
+
 static struct Expression* parse_assign(struct Parser* parser) {
   return parse_cast(parser);
 }
+
+
+static struct Expression* parse_block(struct Parser* parser) {
+  struct Expression* head = malloc(sizeof(*head));
+
+  struct Expression* tail = head;
+  tail->type = EXPR_BLOCK;
+  tail->as.block.expr = parse_expression(parser);
+
+  while(MATCH_TOKEN(parser, SEMICOLON)) {
+    tail->as.block.next = malloc(sizeof(*tail));
+    tail = tail->as.block.next;
+
+    tail->type = EXPR_BLOCK;
+    tail->as.block.expr = parse_expression(parser);
+  }
+
+  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+
+  return head;
+}
+
 
 static struct Expression* parse_ifwhile(struct Parser* parser) {
   struct Expression* expr = malloc(sizeof(*expr));
@@ -180,9 +215,12 @@ static struct Expression* parse_ifwhile(struct Parser* parser) {
   return expr;
 }
 
+
 struct Expression* parse_expression(struct Parser* parser) {
   if(MATCH_TOKEN(parser, IF) || MATCH_TOKEN(parser, WHILE))
     return parse_ifwhile(parser);
+  if(MATCH_TOKEN(parser, LEFT_CURLY))
+    return parse_block(parser);
 
   return parse_assign(parser);
 }
@@ -206,6 +244,7 @@ static void print_literal(const struct Literal* ast) {
   }
 }
 
+
 static void print_unary(const struct Unary* ast) {
   printf("UNARY ");
 
@@ -214,6 +253,7 @@ static void print_unary(const struct Unary* ast) {
   printf("%s ", token_strings[ast->op]);
   print_expression(ast->operand);
 }
+
 
 static void print_binary(const struct Binary* ast) {
   printf("BINARY ");
@@ -225,12 +265,14 @@ static void print_binary(const struct Binary* ast) {
   print_expression(ast->right);
 }
 
+
 static void print_group(const struct Grouping* ast) {
   printf("GROUP ");
 
   if(ast == NULL) { printf("(NULL) "); return; }
   print_expression(ast->expr);
 }
+
 
 static void print_ifwhile(const struct Expression* ast) {
   if(ast->type == EXPR_IF) printf("IF ");
@@ -249,6 +291,20 @@ static void print_ifwhile(const struct Expression* ast) {
   printf(") ");
 }
 
+
+static void print_block(const struct Expression* ast) {
+  if(ast == NULL) { printf("(NULL) "); return; }
+
+  printf("(");
+  print_expression(ast->as.block.expr);
+
+  if(ast->as.block.next)
+    print_expression(ast->as.block.next);
+
+  printf(")");
+}
+
+
 void print_expression(const struct Expression* ast) {
   if(ast == NULL) { printf("(NULL) "); return; }
   else printf("(");
@@ -260,6 +316,7 @@ void print_expression(const struct Expression* ast) {
     case EXPR_GROUP:   print_group(&ast->as.group);     break;
     case EXPR_IF:      __attribute__((fallthrough));
     case EXPR_WHILE:   print_ifwhile(ast);              break;
+    case EXPR_BLOCK:   print_block(ast);                break;
   }
   printf(") ");
 }

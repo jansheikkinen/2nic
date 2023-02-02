@@ -2,6 +2,10 @@
 
 #include "parser.h"
 
+struct Block {
+  struct Expression* expr;
+  struct Expression* next;
+};
 
 struct IfWhile {
   struct Expression* condition;
@@ -42,9 +46,10 @@ struct Grouping {
 struct Expression {
   enum {
     EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP,
-    EXPR_IF, EXPR_WHILE
+    EXPR_BLOCK, EXPR_IF, EXPR_WHILE
   } type;
   union {
+    struct Block block;
     struct IfWhile ifwhile;
     struct Grouping group;
     struct Binary binary;

@@ -18,7 +18,7 @@ funcsig  = "function" IDENTIFIER? "(" [ lvalue_list | type_list ] ")" type_list
 function = function_head block
 
 
-block = "{" { expression ";" } expression? "}"
+block = "{" expression { ";" expression } "}"
 
 expression = expr | stmtexpr
 
