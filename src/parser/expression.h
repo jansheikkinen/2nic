@@ -43,14 +43,33 @@ struct Grouping {
   struct Expression* expr;
 };
 
+struct Call {
+  struct Expression* callee;
+  struct ExprList* arguments;
+};
+
+struct Field {
+  struct Expression* parent;
+  const char* field;
+};
+
+struct ArrayIndex {
+  struct Expression* array;
+  struct Expression* index;
+};
+
 struct Expression {
   enum {
-    EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP,
+    EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP, EXPR_CALL, EXPR_FIELD,
+    EXPR_ARRAY_INDEX,
     EXPR_BLOCK, EXPR_IF, EXPR_WHILE
   } type;
   union {
     struct Block block;
     struct IfWhile ifwhile;
+    struct ArrayIndex array_index;
+    struct Field field;
+    struct Call call;
     struct Grouping group;
     struct Binary binary;
     struct Unary unary;

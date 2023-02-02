@@ -58,6 +58,44 @@ static struct Expression* alloc_binary(enum TokenType op,
 }
 
 
+static struct Expression* alloc_group(struct Expression* expr) {
+  struct Expression* group = malloc(sizeof(*group));
+  group->type = EXPR_GROUP;
+  group->as.group.expr = expr;
+  return group;
+}
+
+
+static struct Expression* alloc_call(struct Expression* callee,
+    struct ExprList* arguments) {
+  struct Expression* expr = malloc(sizeof(*expr));
+  expr->type = EXPR_CALL;
+  expr->as.call.callee = callee;
+  expr->as.call.arguments = arguments;
+  return expr;
+}
+
+
+static struct Expression* alloc_field(struct Expression* parent,
+    const char* field) {
+  struct Expression* expr = malloc(sizeof(*expr));
+  expr->type = EXPR_FIELD;
+  expr->as.field.parent = parent;
+  expr->as.field.field = field;
+  return expr;
+}
+
+
+static struct Expression* alloc_array_index(struct Expression* array,
+    struct Expression* index) {
+  struct Expression* expr = malloc(sizeof(*expr));
+  expr->type = EXPR_ARRAY_INDEX;
+  expr->as.array_index.array = array;
+  expr->as.array_index.index = index;
+  return expr;
+}
+
+
 #define ALLOC_LITERAL(tag, _type, value) \
   ({ _type a = value; alloc_literal(LIT_##tag, &a); })
 
@@ -103,7 +141,33 @@ static struct Expression* parse_primary(struct Parser* parser) {
 
 
 static struct Expression* parse_call(struct Parser* parser) {
-  return parse_primary(parser);
+  struct Expression* primary = parse_primary(parser);
+
+  while(!MATCH_TOKEN(parser, EOF)) {
+    if(MATCH_TOKEN(parser, LEFT_PAREN)) {
+      if(MATCH_TOKEN(parser, RIGHT_PAREN))
+        primary = alloc_call(primary, NULL);
+
+      // TODO: handle arguments; requires ExprList
+
+    } else if(MATCH_TOKEN(parser, DOT)) {
+      EXPECT_TOKEN(parser, IDENTIFIER_LIT, EXPECTED_IDENTIFIER);
+      primary = alloc_field(primary, parser->previous.as.string);
+
+    } else if(MATCH_TOKEN(parser, ARROW)) {
+      EXPECT_TOKEN(parser, IDENTIFIER_LIT, EXPECTED_IDENTIFIER);
+      primary = alloc_field(alloc_group(alloc_unary(TOKEN_MUL, primary)),
+          parser->previous.as.string);
+
+    } else if(MATCH_TOKEN(parser, LEFT_BRACKET)) {
+      struct Expression* index = parse_expression(parser);
+      EXPECT_TOKEN(parser, RIGHT_BRACKET, EXPECTED_RIGHT_BRACKET);
+      primary = alloc_array_index(primary, index);
+
+    } else break;
+  }
+
+  return primary;
 }
 
 
@@ -230,17 +294,15 @@ struct Expression* parse_expression(struct Parser* parser) {
 // ### PRINTING FUNCTIONS ## //
 
 static void print_literal(const struct Literal* ast) {
-  printf("LITERAL ");
-
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
 
   switch(ast->type) {
-  case LIT_BOOL:       printf("%s ", ast->as.boolean? "true" : "false"); break;
-  case LIT_INT:        printf("%zu ", ast->as.integer);                  break;
-  case LIT_FLOAT:      printf("%f ", ast->as.floating);                  break;
-  case LIT_CHAR:       printf("'%c' ", ast->as.character);               break;
-  case LIT_STRING:     printf("\"%s\" ", ast->as.string);                break;
-  case LIT_IDENTIFIER: printf("%s ", ast->as.string);                    break;
+  case LIT_BOOL:       printf("%s", ast->as.boolean? "true" : "false"); break;
+  case LIT_INT:        printf("%zu", ast->as.integer);                  break;
+  case LIT_FLOAT:      printf("%f", ast->as.floating);                  break;
+  case LIT_CHAR:       printf("'%c'", ast->as.character);               break;
+  case LIT_STRING:     printf("\"%s\"", ast->as.string);                break;
+  case LIT_IDENTIFIER: printf("%s", ast->as.string);                    break;
   }
 }
 
@@ -269,7 +331,7 @@ static void print_binary(const struct Binary* ast) {
 static void print_group(const struct Grouping* ast) {
   printf("GROUP ");
 
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
   print_expression(ast->expr);
 }
 
@@ -288,7 +350,7 @@ static void print_ifwhile(const struct Expression* ast) {
 
   printf("(ELSE ");
   print_expression(ast->as.ifwhile.else_clause);
-  printf(") ");
+  printf(")");
 }
 
 
@@ -297,6 +359,7 @@ static void print_block(const struct Expression* ast) {
 
   printf("(");
   print_expression(ast->as.block.expr);
+  printf(" ");
 
   if(ast->as.block.next)
     print_expression(ast->as.block.next);
@@ -305,18 +368,52 @@ static void print_block(const struct Expression* ast) {
 }
 
 
+static void print_call(const struct Call* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  print_expression(ast->callee);
+
+  printf(" (");
+  // TODO: print ExprList
+  printf(")");
+}
+
+
+static void print_field(const struct Field* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  printf(". ");
+  print_expression(ast->parent);
+  printf(" %s", ast->field);
+}
+
+
+static void print_array_index(const struct ArrayIndex* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  printf("@ ");
+  print_expression(ast->array);
+  printf(" ");
+  print_expression(ast->index);
+}
+
+
 void print_expression(const struct Expression* ast) {
   if(ast == NULL) { printf("(NULL) "); return; }
   else printf("(");
 
   switch(ast->type) {
-    case EXPR_LITERAL: print_literal(&ast->as.literal); break;
-    case EXPR_UNARY:   print_unary(&ast->as.unary);     break;
-    case EXPR_BINARY:  print_binary(&ast->as.binary);   break;
-    case EXPR_GROUP:   print_group(&ast->as.group);     break;
-    case EXPR_IF:      __attribute__((fallthrough));
-    case EXPR_WHILE:   print_ifwhile(ast);              break;
-    case EXPR_BLOCK:   print_block(ast);                break;
-  }
-  printf(") ");
+    case EXPR_LITERAL:     print_literal(&ast->as.literal);         break;
+    case EXPR_UNARY:       print_unary(&ast->as.unary);             break;
+    case EXPR_BINARY:      print_binary(&ast->as.binary);           break;
+    case EXPR_GROUP:       print_group(&ast->as.group);             break;
+    case EXPR_IF:          __attribute__((fallthrough));
+    case EXPR_WHILE:       print_ifwhile(ast);                      break;
+    case EXPR_BLOCK:       print_block(ast);                        break;
+    case EXPR_CALL:        print_call(&ast->as.call);               break;
+    case EXPR_FIELD:       print_field(&ast->as.field);             break;
+    case EXPR_ARRAY_INDEX: print_array_index(&ast->as.array_index); break;
+    break;
+    }
+  printf(")");
 }

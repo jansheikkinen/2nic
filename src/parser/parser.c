@@ -22,6 +22,8 @@ const char* error_strings[ERROR_FINAL] = {
   "expected ')'",
   "expected '{'",
   "expected '}'",
+  "expected '['",
+  "expected ']'",
   "expected assignment",
 };
 

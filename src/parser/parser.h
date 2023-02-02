@@ -31,6 +31,8 @@ enum ParseErrorType {
   ERROR_EXPECTED_RIGHT_PAREN,
   ERROR_EXPECTED_LEFT_CURLY,
   ERROR_EXPECTED_RIGHT_CURLY,
+  ERROR_EXPECTED_LEFT_BRACKET,
+  ERROR_EXPECTED_RIGHT_BRACKET,
   ERROR_EXPECTED_ASSIGN,
 
   ERROR_FINAL,
@@ -56,7 +58,7 @@ struct AST* parse_file(const char*);
    ({ (parser)->previous = (parser)->current; \
     (parser)->current = lex_token(parser); true; }) : false)
 
-#define EXPECT_TOKEN(parser, _type, error) { \
+#define EXPECT_TOKEN(parser, _type, error) do { \
   if(MATCH_TOKEN(parser, ERROR)) \
     return RETURN_ERROR(parser, (parser)->current.as.integer); \
   if(!MATCH_TOKEN(parser, _type)) \
