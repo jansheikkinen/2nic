@@ -75,6 +75,8 @@ static struct Expression* parse_primary(struct Parser* parser) {
     return ALLOC_LITERAL(STRING, const char*, parser->previous.as.string);
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     return ALLOC_LITERAL(IDENTIFIER, const char*, parser->previous.as.string);
+  if(MATCH_TOKEN(parser, ERROR))
+    return RETURN_ERROR(parser, parser->previous.as.integer);
   return RETURN_ERROR(parser, ERROR_EXPECTED_EXPRESSION);
 }
 

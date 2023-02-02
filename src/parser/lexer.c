@@ -71,7 +71,7 @@ static struct Token lex_string(struct Parser* parser) {
   const char* start = CURRENT(parser);
 
   while(peek(parser) != '"' && !is_at_end(parser)) next(parser);
-  if(is_at_end(parser)) return TOKEN_NEW_ERROR("unterminated string");
+  if(is_at_end(parser)) return TOKEN_NEW_ERROR(ERROR_LEX_UNTERMINATED_STRING);
 
   char* literal = calloc(CURRENT(parser) - start, sizeof(char));
   memcpy(literal, start, CURRENT(parser) - start);
@@ -89,7 +89,7 @@ static struct Token lex_char(struct Parser* parser) {
     return TOKEN_NEW_CHAR(literal);
   }
 
-  return TOKEN_NEW_ERROR("invalid character literal");
+  return TOKEN_NEW_ERROR(ERROR_LEX_INVALID_CHAR_LITERAL);
 }
 
 static struct Token lex_number(struct Parser* parser) {
@@ -289,5 +289,5 @@ struct Token lex_token(struct Parser* parser) {
     case '\'': return lex_char(parser);
   }
 
-  return TOKEN_NEW_ERROR(&c);
+  return TOKEN_NEW_ERROR(ERROR_LEX_INVALID_SYMBOL);
 }

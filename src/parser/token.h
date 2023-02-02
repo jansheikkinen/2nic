@@ -119,8 +119,8 @@ extern const char* token_strings[TOKEN_EOF];
 #define TOKEN_NEW(type) _NEW_TOKEN(type, { NULL })
 
 #define TOKEN_NEW_IDENTIFIER(lit) _NEW_TOKEN(TOKEN_IDENTIFIER_LIT,    { lit })
-#define TOKEN_NEW_ERROR(lit)      _NEW_TOKEN(TOKEN_ERROR,             { lit })
 #define TOKEN_NEW_STRING(lit)     _NEW_TOKEN(TOKEN_STRING_LIT,        { lit })
+#define TOKEN_NEW_ERROR(lit)      _NEW_TOKEN(TOKEN_ERROR,{ .integer   = lit })
 #define TOKEN_NEW_INT(lit)   _NEW_TOKEN(TOKEN_INT_LIT,   { .integer   = lit })
 #define TOKEN_NEW_FLOAT(lit) _NEW_TOKEN(TOKEN_FLOAT_LIT, { .floating  = lit })
 #define TOKEN_NEW_CHAR(lit)  _NEW_TOKEN(TOKEN_CHAR_LIT,  { .character = lit })

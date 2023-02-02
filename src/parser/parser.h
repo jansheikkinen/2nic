@@ -16,8 +16,12 @@ DEFINE_ARRAYLIST(AST, struct Expression*);
 
 enum ParseErrorType {
   ERROR_UNDEFINED,
-  ERROR_INVALID_DECLARATION,
 
+  ERROR_LEX_UNTERMINATED_STRING,
+  ERROR_LEX_INVALID_CHAR_LITERAL,
+  ERROR_LEX_INVALID_SYMBOL,
+
+  ERROR_EXPECTED_DECLARATION,
   ERROR_EXPECTED_EXPRESSION,
 
   ERROR_EXPECTED_IDENTIFIER,
@@ -32,11 +36,10 @@ enum ParseErrorType {
 
 struct Parser {
   const char* filename;
-  size_t row, col; // TODO: make these update
   const char* program_index;
-  struct Token previous;
-  struct Token current;
-  bool isPanic;
+  size_t row, col;
+  struct Token previous, current;
+  bool isPanic, didPanic; // whether its currently panicing and if it ever did
 };
 
 
@@ -44,15 +47,19 @@ void print_error(struct Parser*, enum ParseErrorType);
 struct AST* parse_file(const char*);
 
 #define RETURN_ERROR(parser, error) \
-  ({ print_error(parser, error); NULL; })
+  ({ if(!(parser)->isPanic) print_error(parser, error); NULL; })
 
 #define MATCH_TOKEN(parser, _type) \
   ((parser)->current.type == (TOKEN_##_type) ? \
    ({ (parser)->previous = (parser)->current; \
     (parser)->current = lex_token(parser); true; }) : false)
 
-#define EXPECT_TOKEN(parser, _type, error) \
-  if(!MATCH_TOKEN(parser, _type)) return RETURN_ERROR(parser, error)
+#define EXPECT_TOKEN(parser, _type, error) { \
+  if(MATCH_TOKEN(parser, TOKEN_ERROR)) \
+    return RETURN_ERROR(parser, (parser)->current.as.integer); \
+  if(!MATCH_TOKEN(parser, _type)) \
+    return RETURN_ERROR(parser, error); \
+  } while(0)
 
 #define PRINT_INDENT(indent) \
   for(size_t jfkdla = 0; jfkdla < (indent); jfkdla++) printf(" ");

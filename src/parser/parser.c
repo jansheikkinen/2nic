@@ -8,7 +8,11 @@
 const char* error_strings[ERROR_FINAL] = {
   "unreachable",
 
-  "invalid declaration",
+  "unterminated string",
+  "invalid character literal",
+  "invalid symbol",
+
+  "expected declaration",
   "expected expression",
 
   "expected an identifier",
@@ -20,7 +24,7 @@ const char* error_strings[ERROR_FINAL] = {
 };
 
 void print_error(struct Parser* ctx, enum ParseErrorType type) {
-  ctx->isPanic = true;
+  ctx->isPanic = true; ctx->didPanic = true;
 
   set_color(COLATTR_BRIGHT, ERR_ERR_COLOR, COL_DEFAULT);
   printf("error");
@@ -28,10 +32,10 @@ void print_error(struct Parser* ctx, enum ParseErrorType type) {
 
   printf(" @ ");
   set_color(COLATTR_BRIGHT, ERR_LOC_COLOR, COL_DEFAULT);
-  printf("%s:(%zu, %zu)", ctx->filename, ctx->col, ctx->row);
+  printf("%s:(%zu, %zu)", ctx->filename, ctx->row, ctx->col);
   reset_color();
 
-  printf(" \"%s\"\n ", TOKEN_STR(&ctx->current));
+  printf(" \"%s\"\n ", TOKEN_STR(&ctx->previous));
 
   set_color(COLATTR_BRIGHT, ERR_ERR_COLOR, COL_DEFAULT);
   printf("  %03d", type);
@@ -49,6 +53,7 @@ struct AST* parse_file(const char* filename) {
   struct Parser parser;
   parser.filename = filename;
   parser.col = 0; parser.row = 0;
+  parser.isPanic = false;
 
   const char* program = read_file(filename);
   parser.program_index = program;
@@ -74,7 +79,8 @@ struct AST* parse_file(const char* filename) {
     // printf("\n");
   }
 
-  print_ast(ast);
+  if(!parser.didPanic)
+    print_ast(ast);
 
   free((char*)program);
 
