@@ -45,7 +45,7 @@ struct Grouping {
 
 struct Call {
   struct Expression* callee;
-  struct ExprList* arguments;
+  struct Expression* arguments;
 };
 
 struct Field {

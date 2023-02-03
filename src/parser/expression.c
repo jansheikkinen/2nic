@@ -68,7 +68,7 @@ static struct Expression* alloc_group(struct Expression* expr) {
 
 
 static struct Expression* alloc_call(struct Expression* callee,
-    struct ExprList* arguments) {
+    struct Expression* arguments) {
   struct Expression* expr = malloc(sizeof(*expr));
   expr->type = EXPR_CALL;
   expr->as.call.callee = callee;
@@ -196,6 +196,10 @@ static struct Expression* parse_call(struct Parser* parser) {
     if(MATCH_TOKEN(parser, LEFT_PAREN)) {
       if(MATCH_TOKEN(parser, RIGHT_PAREN))
         primary = alloc_call(primary, NULL);
+      else {
+        primary = alloc_call(primary, parse_expressions(parser));
+        EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_RIGHT_PAREN);
+      }
 
       // TODO: handle arguments; requires ExprList
 
@@ -464,13 +468,23 @@ static void print_block(const struct Expression* ast) {
 }
 
 
+static void print_expressions(const struct ExprList* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  print_expression(ast->current);
+  printf(" ");
+  print_expression(ast->next);
+}
+
+
 static void print_call(const struct Call* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   print_expression(ast->callee);
 
   printf(" (");
-  // TODO: print ExprList
+  if(ast->arguments)
+    print_expression(ast->arguments);
   printf(")");
 }
 
@@ -499,15 +513,6 @@ static void print_array_init(const struct ArrayInit* ast) {
 
   printf("[] ");
   print_expression(ast->elements);
-}
-
-
-static void print_expressions(const struct ExprList* ast) {
-  if(ast == NULL) { printf("(NULL)"); return; }
-
-  print_expression(ast->current);
-  printf(" ");
-  print_expression(ast->next);
 }
 
 
