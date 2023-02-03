@@ -388,8 +388,15 @@ static struct Expression* parse_ifwhile(struct Parser* parser) {
 struct Expression* parse_expression(struct Parser* parser) {
   if(MATCH_TOKEN(parser, IF) || MATCH_TOKEN(parser, WHILE))
     return parse_ifwhile(parser);
+
   if(MATCH_TOKEN(parser, LEFT_CURLY))
     return parse_block(parser);
+
+  if(MATCH_TOKEN(parser, CONTINUE) || MATCH_TOKEN(parser, BREAK)
+      || MATCH_TOKEN(parser, RETURN)) {
+    enum TokenType op = parser->previous.type;
+    return alloc_unary(op, parse_expression(parser));
+  }
 
   return parse_fallback(parser);
 }

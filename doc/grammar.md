@@ -7,7 +7,7 @@ preliminary grammar document for 2nic
 program = { include | declaration } EOF
 
 
-include     = "include" "(" IDENTIFIER ")"
+include     = "include" STRING
 declaration = struct | union | function | variable
 
 variable = "let"                      vardecl_list ";"
@@ -19,36 +19,40 @@ function = function_head block
 
 
 block = "{" statement* expression? "}"
-statement = expression ";" | block | variable
+statement = expression? ";" | block | variable
 
 expression = expr | stmtexpr
 
 stmtexpr = if | while | for | block | builtin | try | catch | orelse
-builtin  = ("continue" | "return" | "break") [ "(" expression ")" ]
-body     = "(" expression ")" expression [ "else" expression ]
-if       = "if"    body
-while    = "while" body
+builtin  = ("continue" | "return" | "break") expression?
+else     = "else" expression
+body     = expression [ else ]
+if       = "if"    "(" expression  ")" body
+while    = "while" "(" expression  ")" body
+for      = "for"   "(" statement? expression? ";" expression? ")" body
 
-expr     = fallback
-fallback = assign      { fb_op     assign  }
-assign   = assign_list |           log_or
-cast     = log_or      [ "as"      type    ]
-log_or   = log_and     { "or"      log_and }
-log_and  = equal       { "and"     equal   }
-equal    = compare     { equal_op  compare }
-compare  = bitwise     { cmp_op    bitwise }
-bitwise  = term        { bit_op    term    }
-term     = factor      { term_op   factor  }
-factor   = unary       { factor_op unary   }
-unary    = unary_op unary | call
-call     = primary { "(" expr_list? ")" | field | array_index }
-primary  = "(" expression ")" | stmtexpr | array_init
-         | NUMBER | STRING | CHAR | BOOL
+expr      = unary_low
+unary_low = un_low_op unary_low | fallback
+fallback  = assign      { fb_op     assign  }
+assign    = assign_list |           log_or
+cast      = log_or      [ "as"      type    ]
+log_or    = log_and     { "or"      log_and }
+log_and   = equal       { "and"     equal   }
+equal     = compare     { equal_op  compare }
+compare   = bitwise     { cmp_op    bitwise }
+bitwise   = term        { bit_op    term    }
+term      = factor      { term_op   factor  }
+factor    = unary       { factor_op unary   }
+unary     = unary_op unary | call
+call      = primary { "(" expr_list? ")" | field | array_index }
+primary   = "(" expression ")" | stmtexpr | array_init
+          | NUMBER | STRING | CHAR | BOOL
 
 field       = ( "." | "->" ) IDENTIFIER
 array_index = "[" expression "]"
 array_init  = "[" expr_list  "]"
 struct_init = "[" assign_list "]"
+un_low_op   = "try"   | "return" | "continue" | "break"
 fb_op       = "catch" | "orelse"
 assign_op   =  "=" | "+=" | "-=" | "*=" | "+%=" | "-%=" | "*%=" | "/=" | "%="
             | "&=" | "|=" | "^=" | "<<=" | ">>="
