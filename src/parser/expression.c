@@ -128,6 +128,42 @@ static struct Expression* parse_group(struct Parser* parser) {
 }
 
 
+static struct Expression* parse_expressions(struct Parser* parser) {
+  struct Expression* head = malloc(sizeof(*head));
+
+  struct Expression* tail = head;
+  tail->type = EXPR_LIST;
+  tail->as.list.current = parse_expression(parser);
+
+  while(MATCH_TOKEN(parser, COMMA)) {
+    tail->as.list.next = malloc(sizeof(*(tail->as.list.next)));
+    tail = tail->as.list.next;
+
+    tail->type = EXPR_LIST;
+    tail->as.list.current = parse_expression(parser);
+  }
+
+  // (a (b (c NULL))) -> (a (b c))
+  struct Expression* c = tail->as.list.current;
+  *tail = *c;
+  free(c);
+
+  return head;
+}
+
+
+static struct Expression* parse_array_init(struct Parser* parser) {
+  struct Expression* expr = malloc(sizeof(*expr));
+  expr->type = EXPR_ARRAY_INIT;
+
+  expr->as.array_init.elements = parse_expressions(parser);
+
+  EXPECT_TOKEN(parser, RIGHT_BRACKET, EXPECTED_RIGHT_BRACKET);
+
+  return expr;
+}
+
+
 static struct Expression* parse_primary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, TRUE) || MATCH_TOKEN(parser, FALSE))
     return ALLOC_LITERAL(BOOL,bool,parser->previous.type==TOKEN_TRUE?true:false);
@@ -143,6 +179,8 @@ static struct Expression* parse_primary(struct Parser* parser) {
     return ALLOC_LITERAL(IDENTIFIER, const char*, parser->previous.as.string);
   if(MATCH_TOKEN(parser, LEFT_PAREN))
     return parse_group(parser);
+  if(MATCH_TOKEN(parser, LEFT_BRACKET))
+    return parse_array_init(parser);
   if(MATCH_TOKEN(parser, ERROR))
     return RETURN_ERROR(parser, parser->previous.as.integer);
   if(MATCH_TOKEN(parser, EOF))
@@ -420,8 +458,7 @@ static void print_block(const struct Expression* ast) {
   print_expression(ast->as.block.expr);
   printf(" ");
 
-  if(ast->as.block.next)
-    print_expression(ast->as.block.next);
+  print_expression(ast->as.block.next);
 
   printf(")");
 }
@@ -454,6 +491,23 @@ static void print_array_index(const struct ArrayIndex* ast) {
   print_expression(ast->array);
   printf(" ");
   print_expression(ast->index);
+}
+
+
+static void print_array_init(const struct ArrayInit* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  printf("[] ");
+  print_expression(ast->elements);
+}
+
+
+static void print_expressions(const struct ExprList* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  print_expression(ast->current);
+  printf(" ");
+  print_expression(ast->next);
 }
 
 
@@ -493,8 +547,10 @@ void print_expression(const struct Expression* ast) {
     case EXPR_CALL:        print_call(&ast->as.call);               break;
     case EXPR_FIELD:       print_field(&ast->as.field);             break;
     case EXPR_ARRAY_INDEX: print_array_index(&ast->as.array_index); break;
+    case EXPR_ARRAY_INIT:  print_array_init(&ast->as.array_init);   break;
+    case EXPR_LIST:        print_expressions(&ast->as.list);        break;
     case EXPR_CAST:        print_cast(&ast->as.cast);               break;
-    case EXPR_ASSIGN:      print_assigns(&ast->as.assign);           break;
+    case EXPR_ASSIGN:      print_assigns(&ast->as.assign);          break;
     break;
     }
   printf(")");

@@ -58,6 +58,15 @@ struct ArrayIndex {
   struct Expression* index;
 };
 
+struct ArrayInit {
+  struct Expression* elements;
+};
+
+struct ExprList {
+  struct Expression* current;
+  struct Expression* next;
+};
+
 struct Cast {
   struct Expression* expr;
   struct Type* type;
@@ -71,7 +80,7 @@ struct AssignList {
 struct Expression {
   enum {
     EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP, EXPR_CALL, EXPR_FIELD,
-    EXPR_ARRAY_INDEX, EXPR_CAST, EXPR_ASSIGN,
+    EXPR_ARRAY_INDEX, EXPR_ARRAY_INIT, EXPR_CAST, EXPR_ASSIGN, EXPR_LIST,
     EXPR_BLOCK, EXPR_IF, EXPR_WHILE
   } type;
   union {
@@ -83,6 +92,8 @@ struct Expression {
     struct AssignList assign;
     struct Cast cast;
     struct ArrayIndex array_index;
+    struct ArrayInit array_init;
+    struct ExprList list;
     struct Field field;
     struct Call call;
     struct Grouping group;
