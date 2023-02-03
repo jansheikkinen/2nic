@@ -18,38 +18,38 @@ funcsig  = "function" IDENTIFIER? "(" [ vardecl_list | type_list ] ")" type_list
 function = function_head block
 
 
-block = "{" expression { ";" expression } "}"
+block = "{" statement* expression? "}"
+statement = expression ";" | block | variable
 
 expression = expr | stmtexpr
 
-stmtexpr = if | while | for | block | variable | builtin | try | catch | orelse
+stmtexpr = if | while | for | block | builtin | try | catch | orelse
 builtin  = ("continue" | "return" | "break") [ "(" expression ")" ]
 body     = "(" expression ")" expression [ "else" expression ]
 if       = "if"    body
 while    = "while" body
-try      = "try" expression
-catch    = expression "catch" expression
-orelse   = expression "orelse" expression
 
-expr    = assign
-assign  = assign_list | log_or
-cast    = log_or  [ "as" type ]
-log_or  = log_and { "or"      log_and }
-log_and = equal   { "and"     equal   }
-equal   = compare { equal_op  compare }
-compare = bitwise { cmp_op    bitwise }
-bitwise = term    { bit_op    term    }
-term    = factor  { term_op   factor  }
-factor  = unary   { factor_op unary   }
-unary   = unary_op unary | call
-call    = primary { "(" expr_list? ")" | field | array_index }
-primary = "(" expression ")" | stmtexpr | array_init
-        | NUMBER | STRING | CHAR | BOOL
+expr     = fallback
+fallback = assign      { fb_op     assign  }
+assign   = assign_list |           log_or
+cast     = log_or      [ "as"      type    ]
+log_or   = log_and     { "or"      log_and }
+log_and  = equal       { "and"     equal   }
+equal    = compare     { equal_op  compare }
+compare  = bitwise     { cmp_op    bitwise }
+bitwise  = term        { bit_op    term    }
+term     = factor      { term_op   factor  }
+factor   = unary       { factor_op unary   }
+unary    = unary_op unary | call
+call     = primary { "(" expr_list? ")" | field | array_index }
+primary  = "(" expression ")" | stmtexpr | array_init
+         | NUMBER | STRING | CHAR | BOOL
 
 field       = ( "." | "->" ) IDENTIFIER
 array_index = "[" expression "]"
 array_init  = "[" expr_list  "]"
 struct_init = "[" assign_list "]"
+fb_op       = "catch" | "orelse"
 assign_op   =  "=" | "+=" | "-=" | "*=" | "+%=" | "-%=" | "*%=" | "/=" | "%="
             | "&=" | "|=" | "^=" | "<<=" | ">>="
 equal_op    = "==" | "!="

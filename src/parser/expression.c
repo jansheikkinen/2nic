@@ -227,8 +227,9 @@ static struct Expression* parse_call(struct Parser* parser) {
 static struct Expression* parse_unary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, BIT_NOT) || MATCH_TOKEN(parser, LOGIC_NOT)
       || MATCH_TOKEN(parser, SUB) || MATCH_TOKEN(parser, BIT_AND)
-      || MATCH_TOKEN(parser, MUL)) {
-    return alloc_unary(parser->previous.type, parse_unary(parser));
+      || MATCH_TOKEN(parser, MUL) || MATCH_TOKEN(parser, TRY)) {
+    enum TokenType op = parser->previous.type;
+    return alloc_unary(op, parse_unary(parser));
   }
 
   return parse_call(parser);
@@ -303,7 +304,6 @@ struct Expression* parse_cast(struct Parser* parser) {
 
 
 DEFINE_BINARY(assign, cast, MATCH_ASSIGN_OPS(parser))
-#undef DEFINE_BINARY
 
 
 static struct Expression* parse_assigns(struct Parser* parser) {
@@ -329,6 +329,10 @@ static struct Expression* parse_assigns(struct Parser* parser) {
   return head;
 }
 
+DEFINE_BINARY(fallback, assigns,
+    MATCH_TOKEN(parser, ORELSE) || MATCH_TOKEN(parser, CATCH))
+
+#undef DEFINE_BINARY
 
 static struct Expression* parse_block(struct Parser* parser) {
   struct Expression* head = malloc(sizeof(*head));
@@ -387,7 +391,7 @@ struct Expression* parse_expression(struct Parser* parser) {
   if(MATCH_TOKEN(parser, LEFT_CURLY))
     return parse_block(parser);
 
-  return parse_assigns(parser);
+  return parse_fallback(parser);
 }
 
 
@@ -409,8 +413,6 @@ static void print_literal(const struct Literal* ast) {
 
 
 static void print_unary(const struct Unary* ast) {
-  printf("UNARY ");
-
   if(ast == NULL) { printf("(NULL) "); return; }
 
   printf("%s ", token_strings[ast->op]);
@@ -419,12 +421,11 @@ static void print_unary(const struct Unary* ast) {
 
 
 static void print_binary(const struct Binary* ast) {
-  printf("BINARY ");
-
   if(ast == NULL) { printf("(NULL) "); return; }
 
   printf("%s ", token_strings[ast->op]);
   print_expression(ast->left);
+  printf(" ");
   print_expression(ast->right);
 }
 
@@ -557,6 +558,7 @@ void print_expression(const struct Expression* ast) {
     case EXPR_CAST:        print_cast(&ast->as.cast);               break;
     case EXPR_ASSIGN:      print_assigns(&ast->as.assign);          break;
     break;
-    }
+  }
+
   printf(")");
 }

@@ -135,7 +135,6 @@ static struct Token lex_identifier(struct Parser* parser) {
   switch(literal[0]) {
     case 'l': return check_keyword(literal, 1, 2, "et", TOKEN_LET);
     case 'n': return check_keyword(literal, 1, 7, "oreturn", TOKEN_NORETURN);
-    case 'o': return check_keyword(literal, 1, 1, "r", TOKEN_LOGIC_OR);
     case 'r': return check_keyword(literal, 1, 5, "eturn", TOKEN_RETURN);
     case 's': return check_keyword(literal, 1, 5, "truct", TOKEN_STRUCT);
     case 'v': return check_keyword(literal, 1, 3, "oid", TOKEN_VOID);
@@ -163,6 +162,7 @@ static struct Token lex_identifier(struct Parser* parser) {
     case 'c': // char continue
       if(len > 1) {
         switch(literal[1]) {
+          case 'a': return check_keyword(literal, 2, 3, "tch", TOKEN_CATCH);
           case 'h': return check_keyword(literal, 2, 2, "ar", TOKEN_CHAR);
           case 'o': return check_keyword(literal, 2, 6, "ntinue", TOKEN_CONTINUE);
         }
@@ -228,10 +228,28 @@ static struct Token lex_identifier(struct Parser* parser) {
           case 'u': return check_keyword(literal, 2, 1, "t", TOKEN_MUT);
         }
       } break;
+    case 'o': {
+      if(len > 1) {
+        switch(literal[1]) {
+          case 'r': {
+            if(len > 2)
+              return check_keyword(literal, 2, 4, "else", TOKEN_ORELSE);
+            else return TOKEN_NEW(TOKEN_LOGIC_OR);
+          }
+        }
+      }
+    } break;
     case 't': // true type
       if(len > 1) {
         switch(literal[1]) {
-          case 'r': return check_keyword(literal, 2, 2, "ue", TOKEN_TRUE);
+          case 'r': {
+            if(len > 2) {
+              switch(literal[2]) {
+                case 'y': return TOKEN_NEW(TOKEN_TRY);
+                case 'u': return check_keyword(literal, 3, 1, "e", TOKEN_TRUE);
+              }
+            } break;
+          }
           case 'y': return check_keyword(literal, 2, 2, "pe", TOKEN_TYPE);
         }
       } break;
