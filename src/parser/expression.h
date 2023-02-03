@@ -58,15 +58,30 @@ struct ArrayIndex {
   struct Expression* index;
 };
 
+struct Cast {
+  struct Expression* expr;
+  struct Type* type;
+};
+
+struct AssignList {
+  struct Expression* current;
+  struct Expression* next;
+};
+
 struct Expression {
   enum {
     EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP, EXPR_CALL, EXPR_FIELD,
-    EXPR_ARRAY_INDEX,
+    EXPR_ARRAY_INDEX, EXPR_CAST, EXPR_ASSIGN,
     EXPR_BLOCK, EXPR_IF, EXPR_WHILE
   } type;
   union {
+    // Statement Expressions
     struct Block block;
     struct IfWhile ifwhile;
+
+    // Normal Expressions
+    struct AssignList assign;
+    struct Cast cast;
     struct ArrayIndex array_index;
     struct Field field;
     struct Call call;
@@ -78,4 +93,9 @@ struct Expression {
 };
 
 struct Expression* parse_expression(struct Parser*);
+struct Expression* parse_cast(struct Parser*);
+
+struct Expression* alloc_binary(enum TokenType, struct Expression*,
+    struct Expression*);
+
 void print_expression(const struct Expression*);

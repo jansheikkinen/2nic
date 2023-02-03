@@ -1,6 +1,7 @@
 // expression.c
 
 #include "expression.h"
+#include "list.h"
 #include <stdio.h>
 
 
@@ -45,7 +46,7 @@ static struct Expression* alloc_unary(enum TokenType op,
 }
 
 
-static struct Expression* alloc_binary(enum TokenType op,
+struct Expression* alloc_binary(enum TokenType op,
     struct Expression* left, struct Expression* right) {
   struct Expression* expr = malloc(sizeof(*expr));
 
@@ -93,6 +94,16 @@ static struct Expression* alloc_array_index(struct Expression* array,
   expr->as.array_index.array = array;
   expr->as.array_index.index = index;
   return expr;
+}
+
+
+static struct Expression* alloc_cast(struct Expression* expr,
+    struct Type* type) {
+  struct Expression* cast = malloc(sizeof(*cast));
+  cast->type = EXPR_CAST;
+  cast->as.cast.expr = expr;
+  cast->as.cast.type = type;
+  return cast;
 }
 
 
@@ -221,16 +232,59 @@ DEFINE_BINARY(equal, compare,
 DEFINE_BINARY(logic_and, equal, MATCH_TOKEN(parser, LOGIC_AND))
 DEFINE_BINARY(logic_or, logic_and, MATCH_TOKEN(parser, LOGIC_OR))
 
-#undef DEFINE_BINARY
 
+struct Expression* parse_cast(struct Parser* parser) {
+  struct Expression* expression = parse_logic_or(parser);
 
-static struct Expression* parse_cast(struct Parser* parser) {
-  return parse_logic_or(parser);
+  if(MATCH_TOKEN(parser, AS))
+    expression = alloc_cast(expression, NULL); // TODO: cast type
+
+  return expression;
 }
 
 
-static struct Expression* parse_assign(struct Parser* parser) {
-  return parse_cast(parser);
+#define MATCH_ASSIGN_OPS(parser) \
+  MATCH_TOKEN(parser, ASSIGN) \
+  || MATCH_TOKEN(parser, ADD_ASSIGN) \
+  || MATCH_TOKEN(parser, SUB_ASSIGN) \
+  || MATCH_TOKEN(parser, MUL_ASSIGN) \
+  || MATCH_TOKEN(parser, ADD_WRAP_ASSIGN) \
+  || MATCH_TOKEN(parser, SUB_WRAP_ASSIGN) \
+  || MATCH_TOKEN(parser, MUL_WRAP_ASSIGN) \
+  || MATCH_TOKEN(parser, DIV_ASSIGN) \
+  || MATCH_TOKEN(parser, MOD_ASSIGN) \
+  || MATCH_TOKEN(parser, BIT_SHR_ASSIGN) \
+  || MATCH_TOKEN(parser, BIT_SHL_ASSIGN) \
+  || MATCH_TOKEN(parser, BIT_AND_ASSIGN) \
+  || MATCH_TOKEN(parser, BIT_XOR_ASSIGN) \
+  || MATCH_TOKEN(parser, BIT_OR_ASSIGN)
+
+
+DEFINE_BINARY(assign, cast, MATCH_ASSIGN_OPS(parser))
+#undef DEFINE_BINARY
+
+
+static struct Expression* parse_assigns(struct Parser* parser) {
+  struct Expression* head = malloc(sizeof(*head));
+
+  struct Expression* tail = head;
+  tail->type = EXPR_ASSIGN;
+  tail->as.assign.current = parse_assign(parser);
+
+  while(MATCH_TOKEN(parser, COMMA)) {
+    tail->as.assign.next = malloc(sizeof(*(tail->as.assign.next)));
+    tail = tail->as.assign.next;
+
+    tail->type = EXPR_ASSIGN;
+    tail->as.assign.current = parse_assign(parser);
+  }
+
+  // (a (b (c NULL))) -> (a (b c))
+  struct Expression* c = tail->as.assign.current;
+  *tail = *c;
+  free(c);
+
+  return head;
 }
 
 
@@ -250,6 +304,11 @@ static struct Expression* parse_block(struct Parser* parser) {
   }
 
   EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+
+  // (a (b (c NULL))) -> (a (b c))
+  struct Expression* c = tail->as.block.expr;
+  *tail = *c;
+  free(c);
 
   return head;
 }
@@ -286,7 +345,7 @@ struct Expression* parse_expression(struct Parser* parser) {
   if(MATCH_TOKEN(parser, LEFT_CURLY))
     return parse_block(parser);
 
-  return parse_assign(parser);
+  return parse_assigns(parser);
 }
 
 
@@ -398,6 +457,27 @@ static void print_array_index(const struct ArrayIndex* ast) {
 }
 
 
+static void print_cast(const struct Cast* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  printf("as ");
+  print_expression(ast->expr);
+
+  printf(" (%%type");
+  // TODO: type
+  printf(")");
+}
+
+
+static void print_assigns(const struct AssignList* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  print_expression(ast->current);
+  printf(" ");
+  print_expression(ast->next);
+}
+
+
 void print_expression(const struct Expression* ast) {
   if(ast == NULL) { printf("(NULL) "); return; }
   else printf("(");
@@ -413,6 +493,8 @@ void print_expression(const struct Expression* ast) {
     case EXPR_CALL:        print_call(&ast->as.call);               break;
     case EXPR_FIELD:       print_field(&ast->as.field);             break;
     case EXPR_ARRAY_INDEX: print_array_index(&ast->as.array_index); break;
+    case EXPR_CAST:        print_cast(&ast->as.cast);               break;
+    case EXPR_ASSIGN:      print_assigns(&ast->as.assign);           break;
     break;
     }
   printf(")");

@@ -80,6 +80,7 @@ const char* token_strings[TOKEN_EOF] = {
   "TOKEN_BREAK",
   "TOKEN_CONTINUE",
   "TOKEN_RETURN",
+  "TOKEN_AS",
   "TOKEN_INT8",
   "TOKEN_INT16",
   "TOKEN_INT32",

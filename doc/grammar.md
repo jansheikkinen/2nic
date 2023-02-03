@@ -12,9 +12,9 @@ declaration = struct | union | function | variable
 
 variable = "let"                      vardecl_list ";"
 struct   = "struct"   IDENTIFIER? "{" vardecl_list "}"
-union    = "union"    IDENTIFIER? "{" type_list   "}"
-enum     = "enum"     IDENTIFIER? "{" assign_list "}"
-funcsig  = "function" IDENTIFIER? "(" [ lvalue_list | type_list ] ")" type_list
+union    = "union"    IDENTIFIER? "{" type_list    "}"
+enum     = "enum"     IDENTIFIER? "{" assign_list  "}"
+funcsig  = "function" IDENTIFIER? "(" [ vardecl_list | type_list ] ")" type_list
 function = function_head block
 
 
@@ -33,7 +33,7 @@ orelse   = expression "orelse" expression
 
 expr    = assign
 assign  = assign_list | log_or
-cast    = assign [ "as" type ]
+cast    = log_or  [ "as" type ]
 log_or  = log_and { "or"      log_and }
 log_and = equal   { "and"     equal   }
 equal   = compare { equal_op  compare }
@@ -51,7 +51,7 @@ array_index = "[" expression "]"
 array_init  = "[" expr_list  "]"
 struct_init = "[" assign_list "]"
 assign_op   =  "=" | "+=" | "-=" | "*=" | "+%=" | "-%=" | "*%=" | "/=" | "%="
-            | "&=" | "|=" | "^="
+            | "&=" | "|=" | "^=" | "<<=" | ">>="
 equal_op    = "==" | "!="
 cmp_op      = "<=" | ">=" |  "<" | ">"
 bit_op      =  "&" |  "|" |  "^" | "<<" | ">>"
@@ -66,7 +66,6 @@ assign_arg  = call assign_op expression
 
 vardecl_list = vardecl_arg { "," vardecl_arg }
 assign_list  = assign_arg  { "," assign_arg  }
-lvalue_list  = lvalue      { "," lvalue      }
 expr_list    = expression  { "," expression  }
 type_list    = type        { "," type        }
 
