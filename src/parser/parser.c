@@ -16,8 +16,10 @@ const char* error_strings[ERROR_FINAL] = {
 
   "expected declaration",
   "expected expression",
+  "expected type",
   "expected end of statement",
   "expected end of block",
+  "expected end of variable; missing semicolon?",
 
   "expected an identifier",
   "expected '('",
@@ -41,7 +43,20 @@ void print_error(struct Parser* ctx, enum ParseErrorType type) {
   printf("%s:(%zu, %zu)", ctx->filename, ctx->row, ctx->col);
   reset_color();
 
-  printf(" \"%s\"\n ", TOKEN_STR(&ctx->previous));
+  if(ctx->previous.type >= TOKEN_IDENTIFIER_LIT
+      && ctx->previous.type <= TOKEN_BOOL_LIT) {
+    printf(" at literal ");
+    switch(ctx->previous.type) {
+      case TOKEN_IDENTIFIER_LIT:
+      case TOKEN_STRING_LIT: printf("\"%s\"", ctx->previous.as.string);   break;
+      case TOKEN_INT_LIT:    printf("%zd",    ctx->previous.as.integer);  break;
+      case TOKEN_FLOAT_LIT:  printf("%f",     ctx->previous.as.floating); break;
+      case TOKEN_CHAR_LIT:   printf("'%c'",   ctx->previous.as.character);break;
+      case TOKEN_BOOL_LIT:   printf("%d",     ctx->previous.as.boolean);  break;
+      default: break;
+    }
+    printf("\n");
+  } else printf(" at token \"%s\"\n ", TOKEN_STR(&ctx->previous));
 
   set_color(COLATTR_BRIGHT, ERR_ERR_COLOR, COL_DEFAULT);
   printf("  %03d", type);
@@ -88,7 +103,7 @@ struct AST* parse_file(const char* filename) {
     // printf("\n");
   }
 
-  // if(!parser.didPanic)
+  if(!parser.didPanic)
     print_ast(ast);
 
   free((char*)program);

@@ -1,6 +1,7 @@
 // expression.c
 
 #include "expression.h"
+#include "declaration.h"
 #include "list.h"
 #include <stdio.h>
 
@@ -306,6 +307,11 @@ static struct Expression* parse_cast(struct Parser* parser) {
 DEFINE_BINARY(assign, cast, MATCH_ASSIGN_OPS(parser))
 
 
+// TODO: something like { let a: int8 = 5, b = 6; a } breaks
+// because the comma is interpreted as belonging to this rule,
+// when in reality, it belongs to the parse_vardecls rule.
+// i've temporarily disabled this function, making multi-assignment
+// expressions impossible for now, but i'd like to fix this at some point
 static struct Expression* parse_assigns(struct Parser* parser) {
   struct Expression* head = malloc(sizeof(*head));
 
@@ -329,7 +335,7 @@ static struct Expression* parse_assigns(struct Parser* parser) {
   return head;
 }
 
-DEFINE_BINARY(fallback, assigns,
+DEFINE_BINARY(fallback, assign,
     MATCH_TOKEN(parser, ORELSE) || MATCH_TOKEN(parser, CATCH))
 
 #undef DEFINE_BINARY
@@ -345,13 +351,35 @@ struct Block* parse_block(struct Parser* parser) {
 
   while(!MATCH_TOKEN(parser, RIGHT_CURLY) && !MATCH_TOKEN(parser, EOF)) {
     if(MATCH_TOKEN(parser, LET)) {
+      struct Statement stmt;
+      stmt.type = STMT_VAR;
+      stmt.as.var = parse_variable(parser);
+      APPEND_ARRAYLIST(&block->stmts, stmt);
 
     } else if(MATCH_TOKEN(parser, LEFT_CURLY)) {
-      block->expr = parse_block_expression(parser);
+      struct Block* blk = parse_block(parser);
+      if(MATCH_TOKEN(parser, SEMICOLON)) {
+        struct Expression* expr = malloc(sizeof(*expr));
+        expr->type = EXPR_BLOCK;
+        expr->as.block = *blk;
+        free(blk);
+
+        struct Statement stmt;
+        stmt.type = STMT_EXPR;
+        stmt.as.expr = expr;
+        APPEND_ARRAYLIST(&block->stmts, stmt);
+      } else {
+        struct Statement stmt;
+        stmt.type = STMT_BLOCK;
+        stmt.as.block = blk;
+        APPEND_ARRAYLIST(&block->stmts, stmt);
+      }
 
     } else {
       struct Expression* expr = parse_expression(parser);
       if(MATCH_TOKEN(parser, SEMICOLON)) {
+        parser->isPanic = false;
+
         struct Statement stmt;
         stmt.type = STMT_EXPR;
         stmt.as.expr = expr;
@@ -493,7 +521,7 @@ static void print_statement(const struct Statement* ast) {
   switch(ast->type) {
     case STMT_EXPR:  print_expression(ast->as.expr); break;
     case STMT_BLOCK: print_block(ast->as.block);     break;
-    case STMT_VAR:   break; // TODO
+    case STMT_VAR:   print_variable(ast->as.var);    break;
   }
 }
 
