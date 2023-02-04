@@ -52,7 +52,7 @@ struct Parser {
   const char* program_index;
   size_t row, col;
   struct Token previous, current;
-  bool isPanic, didPanic; // whether its currently panicking and if it ever did
+  bool is_panic, did_panic; // whether its currently panicking and if it ever did
 };
 
 
@@ -60,7 +60,7 @@ void print_error(struct Parser*, enum ParseErrorType);
 struct AST* parse_file(const char*);
 
 #define RETURN_ERROR(parser, error) \
-  ({ if(!(parser)->isPanic) print_error(parser, error); NULL; })
+  ({ if(!(parser)->is_panic) print_error(parser, error); NULL; })
 
 #define MATCH_TOKEN(parser, _type) \
   ((parser)->current.type == (TOKEN_##_type) ? \

@@ -10,10 +10,10 @@ program = { include | declaration } EOF
 include     = "include" STRING
 declaration = struct | union | function | variable
 
-variable = "let"                      vardecl_list ";"
-struct   = "struct"   IDENTIFIER? [ "{" vardecl_list "}" ]
-union    = "union"    IDENTIFIER? [ "{" type_list    "}" ]
-enum     = "enum"     IDENTIFIER? [ "{" assign_list  "}" ]
+variable = "let"                        vardecl_list ";"
+struct   = "struct"   IDENTIFIER? [ "(" (vardecl_list | "void") ")" ]
+union    = "union"    IDENTIFIER? [ "(" (type_list    | "void") ")" ]
+enum     = "enum"     IDENTIFIER? [ "(" assign_list  ")" ]
 funcsig  = "function" IDENTIFIER?
          "(" [ vardecl_list | "void" ] ")" ( type_list | "void" )
 function = function_head block

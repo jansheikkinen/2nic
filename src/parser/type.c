@@ -34,17 +34,6 @@ struct Type* parse_type(struct Parser* parser) {
     type->as.array.type = parse_type(parser);
 
 
-    // TODO: compound types in function return
-    // currently, `function(void) struct { }` parses such that the
-    // block goes to the struct, not the function body. technically, given only
-    // one set of curly brackets, it *has* to be the function body, but its
-    // only possible to know how many there are *after* one of them has been
-    // parsed. i have three possible solutions to this problem; implement one:
-    // 1. somehow count how many sets of brackets there are, and give the final
-    // set to the function body
-    // 2. come up with an alternative syntax so that compound types don't use
-    // curly brackets
-    // 3. disallow compound type bodies within a function's return
   } else if(MATCH_TOKEN(parser, STRUCT)) {
     type->type = TYPE_COMPOUND;
     type->as.compound.type = COMP_STRUCT;

@@ -22,9 +22,9 @@ struct Struct* parse_struct(struct Parser* parser) {
     _struct->name = parser->previous.as.string;
   else _struct->name = NULL;
 
-  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+  if(MATCH_TOKEN(parser, LEFT_PAREN)) {
     _struct->fields = parse_vardecls(parser);
-    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+    EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_END_OF_DECLARATION);
   } else _struct->fields = NULL;
 
   return _struct;
@@ -38,9 +38,9 @@ struct Union* parse_union(struct Parser* parser) {
     _union->name = parser->previous.as.string;
   else _union->name = NULL;
 
-  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+  if(MATCH_TOKEN(parser, LEFT_PAREN)) {
     _union->fields = parse_types(parser);
-    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+    EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_END_OF_DECLARATION);
   } else _union->fields = NULL;
 
   return _union;
@@ -54,9 +54,9 @@ struct Enum* parse_enum(struct Parser* parser) {
     _enum->name = parser->previous.as.string;
   else _enum->name = NULL;
 
-  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+  if(MATCH_TOKEN(parser, LEFT_PAREN)) {
     _enum->fields = parse_assigns(parser);
-    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+    EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_END_OF_DECLARATION);
   } else _enum->fields = NULL;
 
   return _enum;
@@ -108,6 +108,8 @@ static const char* parse_include(struct Parser* parser) {
 
 
 struct Declaration* parse_declaration(struct Parser* parser) {
+  parser->is_panic = false;
+
   struct Declaration* decl = malloc(sizeof(*decl));
 
   if(MATCH_TOKEN(parser, LET)) {

@@ -38,7 +38,7 @@ const char* error_strings[ERROR_FINAL] = {
 };
 
 void print_error(struct Parser* ctx, enum ParseErrorType type) {
-  ctx->isPanic = true; ctx->didPanic = true;
+  ctx->is_panic = true; ctx->did_panic = true;
 
   set_color(COLATTR_BRIGHT, ERR_ERR_COLOR, COL_DEFAULT);
   printf("error");
@@ -81,7 +81,7 @@ struct AST* parse_file(const char* filename) {
   struct Parser parser;
   parser.filename = filename;
   parser.col = 0; parser.row = 0;
-  parser.isPanic = false;
+  parser.is_panic = false;
 
   const char* program = read_file(filename);
   parser.program_index = program;
@@ -109,7 +109,7 @@ struct AST* parse_file(const char* filename) {
     // printf("\n");
   }
 
-  if(!parser.didPanic)
+  if(!parser.did_panic)
     print_ast(ast);
 
   free((char*)program);

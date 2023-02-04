@@ -383,7 +383,7 @@ struct Block* parse_block(struct Parser* parser) {
     } else {
       struct Expression* expr = parse_expression(parser);
       if(MATCH_TOKEN(parser, SEMICOLON)) {
-        parser->isPanic = false;
+        parser->is_panic = false;
 
         struct Statement stmt;
         stmt.type = STMT_EXPR;
