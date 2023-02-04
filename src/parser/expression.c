@@ -46,7 +46,7 @@ static struct Expression* alloc_unary(enum TokenType op,
 }
 
 
-struct Expression* alloc_binary(enum TokenType op,
+static struct Expression* alloc_binary(enum TokenType op,
     struct Expression* left, struct Expression* right) {
   struct Expression* expr = malloc(sizeof(*expr));
 
@@ -276,7 +276,7 @@ DEFINE_BINARY(logic_and, equal, MATCH_TOKEN(parser, LOGIC_AND))
 DEFINE_BINARY(logic_or, logic_and, MATCH_TOKEN(parser, LOGIC_OR))
 
 
-struct Expression* parse_cast(struct Parser* parser) {
+static struct Expression* parse_cast(struct Parser* parser) {
   struct Expression* expression = parse_logic_or(parser);
 
   if(MATCH_TOKEN(parser, AS))
@@ -335,17 +335,19 @@ DEFINE_BINARY(fallback, assigns,
 #undef DEFINE_BINARY
 
 
+static struct Expression* parse_block_expression(struct Parser*);
+
 struct Block* parse_block(struct Parser* parser) {
   struct Block* block = malloc(sizeof(*block));
 
   NEW_ARRAYLIST(&block->stmts);
   block->expr = NULL;
 
-
   while(!MATCH_TOKEN(parser, RIGHT_CURLY) && !MATCH_TOKEN(parser, EOF)) {
     if(MATCH_TOKEN(parser, LET)) {
 
     } else if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+      block->expr = parse_block_expression(parser);
 
     } else {
       struct Expression* expr = parse_expression(parser);
@@ -367,7 +369,7 @@ struct Block* parse_block(struct Parser* parser) {
 }
 
 
-struct Expression* parse_block_expression(struct Parser* parser) {
+static struct Expression* parse_block_expression(struct Parser* parser) {
   struct Expression* expr = malloc(sizeof(*expr));
   expr->type = EXPR_BLOCK;
 
@@ -439,7 +441,7 @@ static void print_literal(const struct Literal* ast) {
 
 
 static void print_unary(const struct Unary* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("%s ", token_strings[ast->op]);
   print_expression(ast->operand);
@@ -447,7 +449,7 @@ static void print_unary(const struct Unary* ast) {
 
 
 static void print_binary(const struct Binary* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("%s ", token_strings[ast->op]);
   print_expression(ast->left);
@@ -457,9 +459,9 @@ static void print_binary(const struct Binary* ast) {
 
 
 static void print_group(const struct Grouping* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
   printf("GROUP ");
 
-  if(ast == NULL) { printf("(NULL)"); return; }
   print_expression(ast->expr);
 }
 
@@ -486,22 +488,18 @@ static void print_statements(const struct StatementList*);
 static void print_block(const struct Block*);
 
 static void print_statement(const struct Statement* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
-
-  printf("(");
+  if(ast == NULL) { printf("(NULL)"); return; }
 
   switch(ast->type) {
-    case STMT_EXPR:  return print_expression(ast->as.expr);
-    case STMT_BLOCK: return print_block(ast->as.block);
+    case STMT_EXPR:  print_expression(ast->as.expr); break;
+    case STMT_BLOCK: print_block(ast->as.block);     break;
     case STMT_VAR:   break; // TODO
   }
-
-  printf(")");
 }
 
 
 static void print_statements(const struct StatementList* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
 
   for(size_t i = 0; i < ast->size; i++) {
     print_statement(&ast->members[i]);
@@ -511,15 +509,16 @@ static void print_statements(const struct StatementList* ast) {
 }
 
 static void print_block(const struct Block* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
+  if(ast == NULL) { printf("(NULL)"); return; }
 
-  printf("BLOCK ");
+  printf("BLOCK (");
   print_statements(&ast->stmts);
+  printf(")");
 
-  printf(" ");
-
-  if(ast->expr)
+  if(ast->expr) {
+    printf(" ");
     print_expression(ast->expr);
+  }
 }
 
 
@@ -593,8 +592,9 @@ static void print_assigns(const struct AssignList* ast) {
 
 
 void print_expression(const struct Expression* ast) {
-  if(ast == NULL) { printf("(NULL) "); return; }
-  else printf("(");
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  if(ast->type != EXPR_LITERAL) printf("(");
 
   switch(ast->type) {
     case EXPR_LITERAL:     print_literal(&ast->as.literal);         break;
@@ -614,5 +614,5 @@ void print_expression(const struct Expression* ast) {
     break;
   }
 
-  printf(")");
+  if(ast->type != EXPR_LITERAL) printf(")");
 }

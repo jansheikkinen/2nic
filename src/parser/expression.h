@@ -116,10 +116,6 @@ struct Expression {
 };
 
 struct Expression* parse_expression(struct Parser*);
-struct Expression* parse_cast(struct Parser*);
 struct Block* parse_block(struct Parser*);
-
-struct Expression* alloc_binary(enum TokenType, struct Expression*,
-    struct Expression*);
 
 void print_expression(const struct Expression*);
