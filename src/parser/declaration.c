@@ -171,11 +171,13 @@ static void print_funcsig(const struct FuncSig* ast) {
   printf("(sig ");
   if(ast->name) printf("%s ", ast->name);
 
-  if(ast->args) print_vardecls(ast->args);
-  else printf("void ");
+  printf("(");
+  if(ast->args) { print_vardecls(ast->args); printf(") "); }
+  else printf("void) ");
 
-  if(ast->returns) print_types(ast->returns);
-  else printf("void ");
+  printf("(");
+  if(ast->returns) { print_types(ast->returns); printf(") "); }
+  else printf("void) ");
 
   printf("\b)");
 }
