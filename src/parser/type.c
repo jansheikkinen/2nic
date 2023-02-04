@@ -41,16 +41,16 @@ struct Type* parse_type(struct Parser* parser) {
 
   } else if(MATCH_TOKEN(parser, UNION)) {
     type->type = TYPE_COMPOUND;
-    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.type = COMP_UNION;
     type->as.compound.as._union = parse_union(parser);
 
   } else if(MATCH_TOKEN(parser, ENUM)) {
     type->type = TYPE_COMPOUND;
-    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.type = COMP_ENUM;
     type->as.compound.as._enum = parse_enum(parser);
   } else if(MATCH_TOKEN(parser, STRUCT)) {
     type->type = TYPE_COMPOUND;
-    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.type = COMP_FUNC;
     type->as.compound.as.sig = parse_funcsig(parser);
   }
 
