@@ -26,13 +26,44 @@ struct Type* parse_type(struct Parser* parser) {
   } else if(MATCH_TOKEN(parser, LEFT_BRACKET)) {
     type->type = TYPE_ARRAY;
 
-    if(!MATCH_TOKEN(parser, RIGHT_BRACKET))
+    if(!MATCH_TOKEN(parser, RIGHT_BRACKET)) {
       type->as.array.size = parse_expression(parser);
+      EXPECT_TOKEN(parser, RIGHT_BRACKET, EXPECTED_RIGHT_BRACKET);
+    }
 
     type->as.array.type = parse_type(parser);
+
+
+    // TODO: compound types in function return
+    // currently, `function(void) struct { }` parses such that the
+    // block goes to the struct, not the function body. technically, given only
+    // one set of curly brackets, it *has* to be the function body, but its
+    // only possible to know how many there are *after* one of them has been
+    // parsed. i have three possible solutions to this problem; implement one:
+    // 1. somehow count how many sets of brackets there are, and give the final
+    // set to the function body
+    // 2. come up with an alternative syntax so that compound types don't use
+    // curly brackets
+    // 3. disallow compound type bodies within a function's return
+  } else if(MATCH_TOKEN(parser, STRUCT)) {
+    type->type = TYPE_COMPOUND;
+    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.as._struct = parse_struct(parser);
+
+  } else if(MATCH_TOKEN(parser, UNION)) {
+    type->type = TYPE_COMPOUND;
+    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.as._union = parse_union(parser);
+
+  } else if(MATCH_TOKEN(parser, ENUM)) {
+    type->type = TYPE_COMPOUND;
+    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.as._enum = parse_enum(parser);
+  } else if(MATCH_TOKEN(parser, STRUCT)) {
+    type->type = TYPE_COMPOUND;
+    type->as.compound.type = COMP_STRUCT;
+    type->as.compound.as.sig = parse_funcsig(parser);
   }
-
-
 
   return type;
 }
@@ -70,22 +101,10 @@ static void print_compound(const struct Compound* ast) {
 
   printf("(");
   switch(ast->type) {
-    case COMP_STRUCT:
-      printf("struct ");
-      print_struct(ast->as._struct);
-      break;
-    case COMP_UNION:
-      printf("union ");
-      print_union(ast->as._union);
-      break;
-    case COMP_ENUM:
-      printf("enum ");
-      print_enum(ast->as._enum);
-      break;
-    case COMP_FUNC:
-      printf("function ");
-      print_funcsig(ast->as.sig);
-      break;
+    case COMP_STRUCT: print_struct(ast->as._struct); break;
+    case COMP_UNION:  print_union(ast->as._union);   break;
+    case COMP_ENUM:   print_enum(ast->as._enum);     break;
+    case COMP_FUNC:   print_funcsig(ast->as.sig);    break;
   }
 
 }

@@ -48,6 +48,10 @@ struct Declaration {
 };
 
 struct Variable* parse_variable(struct Parser*);
+struct Struct* parse_struct(struct Parser*);
+struct Union* parse_union(struct Parser*);
+struct Enum* parse_enum(struct Parser*);
+struct FuncSig* parse_funcsig(struct Parser*);
 struct Declaration* parse_declaration(struct Parser*);
 
 void print_variable(const struct Variable*);

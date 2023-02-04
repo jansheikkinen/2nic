@@ -15,52 +15,55 @@ struct Variable* parse_variable(struct Parser* parser) {
 }
 
 
-static struct Struct* parse_struct(struct Parser* parser) {
+struct Struct* parse_struct(struct Parser* parser) {
   struct Struct* _struct = malloc(sizeof(*_struct));
 
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     _struct->name = parser->previous.as.string;
   else _struct->name = NULL;
 
-  EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
-  _struct->fields = parse_vardecls(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+    _struct->fields = parse_vardecls(parser);
+    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  } else _struct->fields = NULL;
 
   return _struct;
 }
 
 
-static struct Union* parse_union(struct Parser* parser) {
+struct Union* parse_union(struct Parser* parser) {
   struct Union* _union = malloc(sizeof(*_union));
 
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     _union->name = parser->previous.as.string;
   else _union->name = NULL;
 
-  EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
-  _union->fields = parse_types(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+    _union->fields = parse_types(parser);
+    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  } else _union->fields = NULL;
 
   return _union;
 }
 
 
-static struct Enum* parse_enum(struct Parser* parser) {
+struct Enum* parse_enum(struct Parser* parser) {
   struct Enum* _enum = malloc(sizeof(*_enum));
 
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     _enum->name = parser->previous.as.string;
   else _enum->name = NULL;
 
-  EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
-  _enum->fields = parse_assigns(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+    _enum->fields = parse_assigns(parser);
+    EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
+  } else _enum->fields = NULL;
 
   return _enum;
 }
 
 
-static struct FuncSig* parse_funcsig(struct Parser* parser) {
+struct FuncSig* parse_funcsig(struct Parser* parser) {
   struct FuncSig* fs = malloc(sizeof(*fs));
 
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))

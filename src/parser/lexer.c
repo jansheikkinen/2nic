@@ -299,6 +299,7 @@ struct Token lex_token(struct Parser* parser) {
     case '.':  return TOKEN_NEW(TOKEN_DOT);
     case ',':  return TOKEN_NEW(TOKEN_COMMA);
     case '#':  return TOKEN_NEW(TOKEN_HASHTAG);
+    case '?':  return TOKEN_NEW(TOKEN_QUESTION);
     case '+':  return TOKEN_NEW(match_wrap(parser, '=', '%', TOKEN_ADD));
     case '-':  return TOKEN_NEW(match_arrow(parser, TOKEN_SUB, TOKEN_ARROW));
     case '*':  return TOKEN_NEW(match_wrap(parser, '=', '%', TOKEN_MUL));
