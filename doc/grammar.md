@@ -11,9 +11,9 @@ include     = "include" STRING
 declaration = struct | union | function | variable
 
 variable = "let"                      vardecl_list ";"
-struct   = "struct"   IDENTIFIER? "{" vardecl_list "}"
-union    = "union"    IDENTIFIER? "{" type_list    "}"
-enum     = "enum"     IDENTIFIER? "{" assign_list  "}"
+struct   = "struct"   IDENTIFIER? [ "{" vardecl_list "}" ]
+union    = "union"    IDENTIFIER? [ "{" type_list    "}" ]
+enum     = "enum"     IDENTIFIER? [ "{" assign_list  "}" ]
 funcsig  = "function" IDENTIFIER?
          "(" [ vardecl_list | "void" ] ")" ( type_list | "void" )
 function = function_head block
@@ -75,11 +75,11 @@ expr_list    = expression  { "," expression  }
 type_list    = type        { "," type        }
 
 
-type = primitive | pointer | array | compound | optional | result
+type = "mut"? ( primitive | pointer | array | compound | optional | result )
 result    = "!" type
 optional  = "?" type
 pointer   = "&" type
-array     = "[" "]" type
+array     = "[" expression? "]" type
 compound  = struct | union | funcsig
 primitive = "int8"   | "int16"   | "int32"   | "int64"   | "isize"
           | "uint8"  | "uint16"  | "uint32"  | "uint64"  | "usize"

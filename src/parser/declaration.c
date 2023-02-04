@@ -24,7 +24,7 @@ static struct Struct* parse_struct(struct Parser* parser) {
 
   EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
   _struct->fields = parse_vardecls(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
 
   return _struct;
 }
@@ -39,7 +39,7 @@ static struct Union* parse_union(struct Parser* parser) {
 
   EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
   _union->fields = parse_types(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
 
   return _union;
 }
@@ -54,7 +54,7 @@ static struct Enum* parse_enum(struct Parser* parser) {
 
   EXPECT_TOKEN(parser, LEFT_CURLY, EXPECTED_LEFT_CURLY);
   _enum->fields = parse_assigns(parser);
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_END_OF_DECLARATION);
 
   return _enum;
 }
@@ -94,6 +94,16 @@ static struct Function* parse_function(struct Parser* parser) {
 }
 
 
+// probably overkill lol
+static const char* parse_include(struct Parser* parser) {
+  EXPECT_TOKEN(parser, STRING_LIT, EXPECTED_STRING);
+  const char* include = parser->previous.as.string;
+  EXPECT_TOKEN(parser, SEMICOLON, EXPECTED_END_OF_DECLARATION);
+
+  return include;
+}
+
+
 struct Declaration* parse_declaration(struct Parser* parser) {
   struct Declaration* decl = malloc(sizeof(*decl));
 
@@ -118,6 +128,10 @@ struct Declaration* parse_declaration(struct Parser* parser) {
     decl->type = DECL_FUNC;
     decl->as.function = parse_function(parser);
 
+  } else if(MATCH_TOKEN(parser, INCLUDE)) {
+    decl->type = DECL_INC;
+    decl->as.include = parse_include(parser);
+
   } else RETURN_ERROR(parser, ERROR_EXPECTED_DECLARATION);
 
 
@@ -135,7 +149,7 @@ void print_variable(const struct Variable* ast) {
 }
 
 
-static void print_struct(const struct Struct* ast) {
+void print_struct(const struct Struct* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("(struct ");
@@ -145,7 +159,7 @@ static void print_struct(const struct Struct* ast) {
 }
 
 
-static void print_union(const struct Union* ast) {
+void print_union(const struct Union* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("(union ");
@@ -155,7 +169,7 @@ static void print_union(const struct Union* ast) {
 }
 
 
-static void print_enum(const struct Enum* ast) {
+void print_enum(const struct Enum* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("(enum ");
@@ -165,7 +179,7 @@ static void print_enum(const struct Enum* ast) {
 }
 
 
-static void print_funcsig(const struct FuncSig* ast) {
+void print_funcsig(const struct FuncSig* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("(sig ");
@@ -194,15 +208,21 @@ static void print_func(const struct Function* ast) {
 }
 
 
+static void print_include(const char* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+  printf("(include \"%s\")", ast);
+}
+
+
 void print_declaration(const struct Declaration* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   switch(ast->type) {
-    case DECL_VAR:    print_variable(ast->as.var);   break;
-    case DECL_STRUCT: print_struct(ast->as._struct); break;
-    case DECL_UNION:  print_union(ast->as._union);   break;
-    case DECL_ENUM:   print_enum(ast->as._enum);     break;
-    case DECL_FUNC:   print_func(ast->as.function);  break;
-      break;
+    case DECL_VAR:    print_variable(ast->as.var);    break;
+    case DECL_STRUCT: print_struct(ast->as._struct);  break;
+    case DECL_UNION:  print_union(ast->as._union);    break;
+    case DECL_ENUM:   print_enum(ast->as._enum);      break;
+    case DECL_FUNC:   print_func(ast->as.function);   break;
+    case DECL_INC:    print_include(ast->as.include); break;
   }
 }

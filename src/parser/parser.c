@@ -18,11 +18,12 @@ const char* error_strings[ERROR_FINAL] = {
   "unexpected end of file",
 
   "expected declaration",
+  "expected end of declaration; missing '}'?",
+  "expected block",
+  "expected end of block",
   "expected expression",
   "expected type",
   "expected end of statement",
-  "expected block",
-  "expected end of block",
   "expected end of variable; missing semicolon?",
 
   "expected an identifier",
@@ -33,6 +34,7 @@ const char* error_strings[ERROR_FINAL] = {
   "expected '['",
   "expected ']'",
   "expected assignment",
+  "expected a string",
 };
 
 void print_error(struct Parser* ctx, enum ParseErrorType type) {

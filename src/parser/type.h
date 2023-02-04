@@ -4,16 +4,39 @@
 
 enum TypeType {
   TYPE_PRIMITIVE,
-  TYPE_RESULT,
-  TYPE_OPTIONAL,
-  TYPE_REFERENCE,
+  TYPE_WRAPPER,
+  TYPE_ARRAY,
   TYPE_COMPOUND,
+};
+
+struct Wrapper {
+  enum TokenType op;
+  struct Type* type;
+};
+
+struct Array {
+  struct Expression* size;
+  struct Type* type;
+};
+
+struct Compound {
+  enum { COMP_STRUCT, COMP_UNION, COMP_ENUM, COMP_FUNC } type;
+  union {
+    struct Struct* _struct;
+    struct Union* _union;
+    struct Enum* _enum;
+    struct FuncSig* sig;
+  } as;
 };
 
 struct Type {
   enum TypeType type; // lol
+  bool is_mutable;
   union {
     enum TokenType primitive;
+    struct Wrapper wrapper;
+    struct Array array;
+    struct Compound compound;
   } as;
 };
 
