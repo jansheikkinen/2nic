@@ -23,19 +23,19 @@ static struct VarDecl* parse_vardecl(struct Parser* parser) {
   struct VarDecl* var = malloc(sizeof(*var));
 
   var->lvalue = parse_lvalue(parser);
+  var->rvalue = NULL;
 
-  EXPECT_TOKEN(parser, ASSIGN, EXPECTED_ASSIGN);
+  if(!MATCH_TOKEN(parser, ASSIGN))
+    return var;
 
   if(!MATCH_TOKEN(parser, UNDEFINED))
     var->rvalue = parse_expression(parser);
-  else var->rvalue = NULL;
 
   return var;
 }
 
 
 struct VarDeclList* parse_vardecls(struct Parser* parser) {
-
   struct VarDeclList* head = malloc(sizeof(*head));
   struct VarDeclList* tail = head;
 
@@ -54,7 +54,23 @@ struct VarDeclList* parse_vardecls(struct Parser* parser) {
 }
 
 
-struct TypeList* parse_types(struct Parser* parser);
+struct TypeList* parse_types(struct Parser* parser) {
+  struct TypeList* head = malloc(sizeof(*head));
+  struct TypeList* tail = head;
+
+  tail->current = parse_type(parser);
+  tail->next = NULL;
+
+  while(MATCH_TOKEN(parser, COMMA)) {
+    tail->next = malloc(sizeof(*(tail->next)));
+    tail = tail->next;
+    tail->next = NULL;
+
+    tail->current = parse_type(parser);
+  }
+
+  return head;
+}
 
 
 
@@ -73,7 +89,7 @@ static void print_lvalue(const struct LValue* ast) {
 static void print_vardecl(const struct VarDecl* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
-  printf("(= ");
+  printf("(:= ");
   print_lvalue(ast->lvalue);
   printf(" ");
   print_expression(ast->rvalue);
@@ -92,4 +108,12 @@ void print_vardecls(const struct VarDeclList* ast) {
 }
 
 
-void print_types(const struct TypeList*);
+void print_types(const struct TypeList* ast) {
+  if(ast == NULL) { printf("(NULL)"); return; }
+
+  print_type(ast->current);
+  if(ast->next) {
+    printf(" ");
+    print_types(ast->next);
+  }
+}

@@ -312,27 +312,32 @@ DEFINE_BINARY(assign, cast, MATCH_ASSIGN_OPS(parser))
 // when in reality, it belongs to the parse_vardecls rule.
 // i've temporarily disabled this function, making multi-assignment
 // expressions impossible for now, but i'd like to fix this at some point
-static struct Expression* parse_assigns(struct Parser* parser) {
-  struct Expression* head = malloc(sizeof(*head));
 
-  struct Expression* tail = head;
-  tail->type = EXPR_ASSIGN;
-  tail->as.assign.current = parse_assign(parser);
+struct AssignList* parse_assigns(struct Parser* parser) {
+  RETURN_ERROR(parser, ERROR_UNIMPLEMENTED);
+
+  struct AssignList* head = malloc(sizeof(*head));
+  struct AssignList* tail = head;
+
+  tail->current = parse_assign(parser);
+  tail->next = NULL;
 
   while(MATCH_TOKEN(parser, COMMA)) {
-    tail->as.assign.next = malloc(sizeof(*(tail->as.assign.next)));
-    tail = tail->as.assign.next;
+    tail->next = malloc(sizeof(*(tail->next)));
+    tail = tail->next;
 
-    tail->type = EXPR_ASSIGN;
-    tail->as.assign.current = parse_assign(parser);
+    tail->current = parse_assign(parser);
   }
 
-  // (a (b (c NULL))) -> (a (b c))
-  struct Expression* c = tail->as.assign.current;
-  *tail = *c;
-  free(c);
-
   return head;
+}
+struct Expression* parse_assigns_expression(struct Parser* parser) {
+  struct Expression* expr = malloc(sizeof(*expr));
+
+  expr->type = EXPR_ASSIGN;
+  expr->as.assign = parse_assigns(parser);
+
+  return expr;
 }
 
 DEFINE_BINARY(fallback, assign,
@@ -513,7 +518,6 @@ static void print_ifwhile(const struct Expression* ast) {
 
 
 static void print_statements(const struct StatementList*);
-static void print_block(const struct Block*);
 
 static void print_statement(const struct Statement* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
@@ -536,7 +540,7 @@ static void print_statements(const struct StatementList* ast) {
   printf("\b");
 }
 
-static void print_block(const struct Block* ast) {
+void print_block(const struct Block* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   printf("BLOCK (");
@@ -610,12 +614,12 @@ static void print_cast(const struct Cast* ast) {
 }
 
 
-static void print_assigns(const struct AssignList* ast) {
+void print_assigns(const struct AssignList* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   print_expression(ast->current);
   printf(" ");
-  print_expression(ast->next);
+  print_assigns(ast->next);
 }
 
 
@@ -638,7 +642,7 @@ void print_expression(const struct Expression* ast) {
     case EXPR_ARRAY_INIT:  print_array_init(&ast->as.array_init);   break;
     case EXPR_LIST:        print_expressions(&ast->as.list);        break;
     case EXPR_CAST:        print_cast(&ast->as.cast);               break;
-    case EXPR_ASSIGN:      print_assigns(&ast->as.assign);          break;
+    case EXPR_ASSIGN:      print_assigns(ast->as.assign);          break;
     break;
   }
 

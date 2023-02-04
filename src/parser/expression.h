@@ -86,7 +86,7 @@ struct Cast {
 
 struct AssignList {
   struct Expression* current;
-  struct Expression* next;
+  struct AssignList* next;
 };
 
 struct Expression {
@@ -101,7 +101,7 @@ struct Expression {
     struct IfWhile ifwhile;
 
     // Normal Expressions
-    struct AssignList assign;
+    struct AssignList* assign;
     struct Cast cast;
     struct ArrayIndex array_index;
     struct ArrayInit array_init;
@@ -117,5 +117,8 @@ struct Expression {
 
 struct Expression* parse_expression(struct Parser*);
 struct Block* parse_block(struct Parser*);
+struct AssignList* parse_assigns(struct Parser*);
 
 void print_expression(const struct Expression*);
+void print_assigns(const struct AssignList*);
+void print_block(const struct Block*);

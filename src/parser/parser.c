@@ -2,11 +2,14 @@
 
 #include "../util/readfile.h"
 #include "../util/textcolor.h"
+#include "declaration.h"
 #include "expression.h"
 #include "parser.h"
 
 const char* error_strings[ERROR_FINAL] = {
   "unreachable",
+
+  "unimplemented; check back later or add your own implementation",
 
   "unterminated string",
   "invalid character literal",
@@ -18,6 +21,7 @@ const char* error_strings[ERROR_FINAL] = {
   "expected expression",
   "expected type",
   "expected end of statement",
+  "expected block",
   "expected end of block",
   "expected end of variable; missing semicolon?",
 
@@ -66,7 +70,7 @@ void print_error(struct Parser* ctx, enum ParseErrorType type) {
 
 static void print_ast(const struct AST* ast) {
   for(size_t i = 0; i < ast->size; i++) {
-    print_expression(ast->members[i]);
+    print_declaration(ast->members[i]);
     printf("\n");
   }
 }
@@ -83,9 +87,9 @@ struct AST* parse_file(const char* filename) {
   struct AST* ast = malloc(sizeof(*ast));
   NEW_ARRAYLIST(ast);
 
-  // printf("%24s | %s\n", "TOKEN TYPE", "LITERAL");
-  while((parser.current = lex_token(&parser)).type != TOKEN_EOF) {
-    APPEND_ARRAYLIST(ast, parse_expression(&parser));
+  parser.current = lex_token(&parser);
+  while(!MATCH_TOKEN(&parser, EOF)) {
+    APPEND_ARRAYLIST(ast, parse_declaration(&parser));
 
     // printf("%24s %02u (%02zu, %02zu) | ",
     //     TOKEN_STR(&parser.current), parser.current.type,

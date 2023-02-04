@@ -14,7 +14,8 @@ variable = "let"                      vardecl_list ";"
 struct   = "struct"   IDENTIFIER? "{" vardecl_list "}"
 union    = "union"    IDENTIFIER? "{" type_list    "}"
 enum     = "enum"     IDENTIFIER? "{" assign_list  "}"
-funcsig  = "function" IDENTIFIER? "(" [ vardecl_list | type_list ] ")" type_list
+funcsig  = "function" IDENTIFIER?
+         "(" [ vardecl_list | "void" ] ")" ( type_list | "void" )
 function = function_head block
 
 
@@ -29,7 +30,7 @@ else     = "else" expression
 body     = expression [ else ]
 if       = "if"    "(" expression  ")" body
 while    = "while" "(" expression  ")" body
-for      = "for"   "(" statement? expression? ";" expression? ")" body
+for      = "for"   "(" variable? expression? ";" expression? ")" body
 
 expr      = unary_low
 unary_low = un_low_op unary_low | fallback
