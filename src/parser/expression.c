@@ -334,29 +334,48 @@ DEFINE_BINARY(fallback, assigns,
 
 #undef DEFINE_BINARY
 
-static struct Expression* parse_block(struct Parser* parser) {
-  struct Expression* head = malloc(sizeof(*head));
 
-  struct Expression* tail = head;
-  tail->type = EXPR_BLOCK;
-  tail->as.block.expr = parse_expression(parser);
+struct Block* parse_block(struct Parser* parser) {
+  struct Block* block = malloc(sizeof(*block));
 
-  while(MATCH_TOKEN(parser, SEMICOLON)) {
-    tail->as.block.next = malloc(sizeof(*tail));
-    tail = tail->as.block.next;
+  NEW_ARRAYLIST(&block->stmts);
+  block->expr = NULL;
 
-    tail->type = EXPR_BLOCK;
-    tail->as.block.expr = parse_expression(parser);
+
+  while(!MATCH_TOKEN(parser, RIGHT_CURLY) && !MATCH_TOKEN(parser, EOF)) {
+    if(MATCH_TOKEN(parser, LET)) {
+
+    } else if(MATCH_TOKEN(parser, LEFT_CURLY)) {
+
+    } else {
+      struct Expression* expr = parse_expression(parser);
+      if(MATCH_TOKEN(parser, SEMICOLON)) {
+        struct Statement stmt;
+        stmt.type = STMT_EXPR;
+        stmt.as.expr = expr;
+        APPEND_ARRAYLIST(&block->stmts, stmt);
+
+      } else if(MATCH_TOKEN(parser, RIGHT_CURLY)) {
+        block->expr = expr;
+        break;
+
+      } else RETURN_ERROR(parser, ERROR_EXPECTED_END_OF_BLOCK);
+    }
   }
 
-  EXPECT_TOKEN(parser, RIGHT_CURLY, EXPECTED_RIGHT_CURLY);
+  return block;
+}
 
-  // (a (b (c NULL))) -> (a (b c))
-  struct Expression* c = tail->as.block.expr;
-  *tail = *c;
-  free(c);
 
-  return head;
+struct Expression* parse_block_expression(struct Parser* parser) {
+  struct Expression* expr = malloc(sizeof(*expr));
+  expr->type = EXPR_BLOCK;
+
+  struct Block* block = parse_block(parser);
+  expr->as.block = *block;
+  free(block);
+
+  return expr;
 }
 
 
@@ -390,7 +409,7 @@ struct Expression* parse_expression(struct Parser* parser) {
     return parse_ifwhile(parser);
 
   if(MATCH_TOKEN(parser, LEFT_CURLY))
-    return parse_block(parser);
+    return parse_block_expression(parser);
 
   if(MATCH_TOKEN(parser, CONTINUE) || MATCH_TOKEN(parser, BREAK)
       || MATCH_TOKEN(parser, RETURN)) {
@@ -463,16 +482,44 @@ static void print_ifwhile(const struct Expression* ast) {
 }
 
 
-static void print_block(const struct Expression* ast) {
+static void print_statements(const struct StatementList*);
+static void print_block(const struct Block*);
+
+static void print_statement(const struct Statement* ast) {
   if(ast == NULL) { printf("(NULL) "); return; }
 
   printf("(");
-  print_expression(ast->as.block.expr);
-  printf(" ");
 
-  print_expression(ast->as.block.next);
+  switch(ast->type) {
+    case STMT_EXPR:  return print_expression(ast->as.expr);
+    case STMT_BLOCK: return print_block(ast->as.block);
+    case STMT_VAR:   break; // TODO
+  }
 
   printf(")");
+}
+
+
+static void print_statements(const struct StatementList* ast) {
+  if(ast == NULL) { printf("(NULL) "); return; }
+
+  for(size_t i = 0; i < ast->size; i++) {
+    print_statement(&ast->members[i]);
+    printf(" ");
+  }
+  printf("\b");
+}
+
+static void print_block(const struct Block* ast) {
+  if(ast == NULL) { printf("(NULL) "); return; }
+
+  printf("BLOCK ");
+  print_statements(&ast->stmts);
+
+  printf(" ");
+
+  if(ast->expr)
+    print_expression(ast->expr);
 }
 
 
@@ -556,7 +603,7 @@ void print_expression(const struct Expression* ast) {
     case EXPR_GROUP:       print_group(&ast->as.group);             break;
     case EXPR_IF:          __attribute__((fallthrough));
     case EXPR_WHILE:       print_ifwhile(ast);                      break;
-    case EXPR_BLOCK:       print_block(ast);                        break;
+    case EXPR_BLOCK:       print_block(&ast->as.block);             break;
     case EXPR_CALL:        print_call(&ast->as.call);               break;
     case EXPR_FIELD:       print_field(&ast->as.field);             break;
     case EXPR_ARRAY_INDEX: print_array_index(&ast->as.array_index); break;

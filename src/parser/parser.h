@@ -25,6 +25,8 @@ enum ParseErrorType {
 
   ERROR_EXPECTED_DECLARATION,
   ERROR_EXPECTED_EXPRESSION,
+  ERROR_EXPECTED_END_OF_STATEMENT,
+  ERROR_EXPECTED_END_OF_BLOCK,
 
   ERROR_EXPECTED_IDENTIFIER,
   ERROR_EXPECTED_LEFT_PAREN,
@@ -43,7 +45,7 @@ struct Parser {
   const char* program_index;
   size_t row, col;
   struct Token previous, current;
-  bool isPanic, didPanic; // whether its currently panicing and if it ever did
+  bool isPanic, didPanic; // whether its currently panicking and if it ever did
 };
 
 

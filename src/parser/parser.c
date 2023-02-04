@@ -16,6 +16,8 @@ const char* error_strings[ERROR_FINAL] = {
 
   "expected declaration",
   "expected expression",
+  "expected end of statement",
+  "expected end of block",
 
   "expected an identifier",
   "expected '('",

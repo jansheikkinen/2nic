@@ -1,10 +1,22 @@
 #pragma once
 
+#include "../util/arraylist.h" // my greatest shame :(
 #include "parser.h"
 
+struct Statement {
+  enum { STMT_EXPR, STMT_BLOCK, STMT_VAR } type;
+  union {
+    struct Block* block;
+    struct Expression* expr;
+    struct Variable* var;
+  } as;
+};
+
+DEFINE_ARRAYLIST(StatementList, struct Statement);
+
 struct Block {
+  struct StatementList stmts;
   struct Expression* expr;
-  struct Expression* next;
 };
 
 struct IfWhile {
@@ -105,6 +117,7 @@ struct Expression {
 
 struct Expression* parse_expression(struct Parser*);
 struct Expression* parse_cast(struct Parser*);
+struct Block* parse_block(struct Parser*);
 
 struct Expression* alloc_binary(enum TokenType, struct Expression*,
     struct Expression*);
