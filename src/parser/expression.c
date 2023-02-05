@@ -168,24 +168,34 @@ static struct Expression* parse_array_init(struct Parser* parser) {
 static struct Expression* parse_primary(struct Parser* parser) {
   if(MATCH_TOKEN(parser, TRUE) || MATCH_TOKEN(parser, FALSE))
     return ALLOC_LITERAL(BOOL,bool,parser->previous.type==TOKEN_TRUE?true:false);
+
   if(MATCH_TOKEN(parser, INT_LIT))
     return ALLOC_LITERAL(INT, size_t, parser->previous.as.integer);
+
   if(MATCH_TOKEN(parser, FLOAT_LIT))
     return ALLOC_LITERAL(FLOAT, double, parser->previous.as.floating);
+
   if(MATCH_TOKEN(parser, CHAR_LIT))
     return ALLOC_LITERAL(CHAR, char, parser->previous.as.character);
+
   if(MATCH_TOKEN(parser, STRING_LIT))
     return ALLOC_LITERAL(STRING, const char*, parser->previous.as.string);
+
   if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
     return ALLOC_LITERAL(IDENTIFIER, const char*, parser->previous.as.string);
+
   if(MATCH_TOKEN(parser, LEFT_PAREN))
     return parse_group(parser);
+
   if(MATCH_TOKEN(parser, LEFT_BRACKET))
     return parse_array_init(parser);
+
   if(MATCH_TOKEN(parser, ERROR))
     return RETURN_ERROR(parser, parser->previous.as.integer);
+
   if(MATCH_TOKEN(parser, EOF))
     return RETURN_ERROR(parser, ERROR_UNEXPECTED_EOF);
+
   return RETURN_ERROR(parser, ERROR_EXPECTED_EXPRESSION);
 }
 
@@ -303,41 +313,16 @@ static struct Expression* parse_cast(struct Parser* parser) {
   || MATCH_TOKEN(parser, BIT_XOR_ASSIGN) \
   || MATCH_TOKEN(parser, BIT_OR_ASSIGN)
 
+static struct Expression* parse_assign(struct Parser* parser) {
+  struct Expression* left = parse_cast(parser);
 
-DEFINE_BINARY(assign, cast, MATCH_ASSIGN_OPS(parser))
-
-
-// TODO: something like { let a: int8 = 5, b = 6; a } breaks
-// because the comma is interpreted as belonging to this rule,
-// when in reality, it belongs to the parse_vardecls rule.
-// i've temporarily disabled this function, making multi-assignment
-// expressions impossible for now, but i'd like to fix this at some point
-
-struct AssignList* parse_assigns(struct Parser* parser) {
-  RETURN_ERROR(parser, ERROR_UNIMPLEMENTED);
-
-  struct AssignList* head = malloc(sizeof(*head));
-  struct AssignList* tail = head;
-
-  tail->current = parse_assign(parser);
-  tail->next = NULL;
-
-  while(MATCH_TOKEN(parser, COMMA)) {
-    tail->next = malloc(sizeof(*(tail->next)));
-    tail = tail->next;
-
-    tail->current = parse_assign(parser);
+  while(MATCH_ASSIGN_OPS(parser)) {
+    enum TokenType op = parser->previous.type;
+    struct Expression* right = parse_cast(parser);
+    left = alloc_binary(op, left, right);
+    left->type = EXPR_ASSIGN;
   }
-
-  return head;
-}
-struct Expression* parse_assigns_expression(struct Parser* parser) {
-  struct Expression* expr = malloc(sizeof(*expr));
-
-  expr->type = EXPR_ASSIGN;
-  expr->as.assign = parse_assigns(parser);
-
-  return expr;
+  return left;
 }
 
 DEFINE_BINARY(fallback, assign,
@@ -614,15 +599,6 @@ static void print_cast(const struct Cast* ast) {
 }
 
 
-void print_assigns(const struct AssignList* ast) {
-  if(ast == NULL) { printf("(NULL)"); return; }
-
-  print_expression(ast->current);
-  printf(" ");
-  print_assigns(ast->next);
-}
-
-
 void print_expression(const struct Expression* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
@@ -642,7 +618,7 @@ void print_expression(const struct Expression* ast) {
     case EXPR_ARRAY_INIT:  print_array_init(&ast->as.array_init);   break;
     case EXPR_LIST:        print_expressions(&ast->as.list);        break;
     case EXPR_CAST:        print_cast(&ast->as.cast);               break;
-    case EXPR_ASSIGN:      print_assigns(ast->as.assign);          break;
+    case EXPR_ASSIGN:      print_binary(&ast->as.binary);           break;
     break;
   }
 

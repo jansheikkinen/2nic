@@ -13,7 +13,6 @@ declaration = struct | union | function | variable
 variable = "let"                        vardecl_list ";"
 struct   = "struct"   IDENTIFIER? [ "(" (vardecl_list | "void") ")" ]
 union    = "union"    IDENTIFIER? [ "(" (type_list    | "void") ")" ]
-enum     = "enum"     IDENTIFIER? [ "(" assign_list  ")" ]
 funcsig  = "function" IDENTIFIER?
          "(" [ vardecl_list | "void" ] ")" ( type_list | "void" )
 function = function_head block
@@ -35,7 +34,7 @@ for      = "for"   "(" variable? expression? ";" expression? ")" body
 expr      = unary_low
 unary_low = un_low_op unary_low | fallback
 fallback  = assign      { fb_op     assign  }
-assign    = assign_list |           cast
+assign    = cast        [ assign_op cast    ]
 cast      = log_or      [ "as"      type    ]
 log_or    = log_and     { "or"      log_and }
 log_and   = equal       { "and"     equal   }
@@ -52,7 +51,6 @@ primary   = "(" expression ")" | stmtexpr | array_init
 field       = ( "." | "->" ) IDENTIFIER
 array_index = "[" expression "]"
 array_init  = "[" expr_list  "]"
-struct_init = "[" assign_list "]"
 un_low_op   = "try"   | "return" | "continue" | "break"
 fb_op       = "catch" | "orelse"
 assign_op   =  "=" | "+=" | "-=" | "*=" | "+%=" | "-%=" | "*%=" | "/=" | "%="
@@ -67,10 +65,8 @@ unary_op    =  "!" |  "-" |  "*" | "&" | "not"
 
 lvalue      = IDENTIFIER [ ":" type ]
 vardecl_arg = lvalue [ "=" ( expression | "undefined" ) ]
-assign_arg  = call assign_op expression
 
 vardecl_list = vardecl_arg { "," vardecl_arg }
-assign_list  = assign_arg  { "," assign_arg  }
 expr_list    = expression  { "," expression  }
 type_list    = type        { "," type        }
 

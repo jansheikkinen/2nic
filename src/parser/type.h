@@ -20,11 +20,10 @@ struct Array {
 };
 
 struct Compound {
-  enum { COMP_STRUCT, COMP_UNION, COMP_ENUM, COMP_FUNC } type;
+  enum { COMP_STRUCT, COMP_UNION, COMP_FUNC } type;
   union {
     struct Struct* _struct;
     struct Union* _union;
-    struct Enum* _enum;
     struct FuncSig* sig;
   } as;
 };

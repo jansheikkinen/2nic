@@ -47,22 +47,6 @@ struct Union* parse_union(struct Parser* parser) {
 }
 
 
-struct Enum* parse_enum(struct Parser* parser) {
-  struct Enum* _enum = malloc(sizeof(*_enum));
-
-  if(MATCH_TOKEN(parser, IDENTIFIER_LIT))
-    _enum->name = parser->previous.as.string;
-  else _enum->name = NULL;
-
-  if(MATCH_TOKEN(parser, LEFT_PAREN)) {
-    _enum->fields = parse_assigns(parser);
-    EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_END_OF_DECLARATION);
-  } else _enum->fields = NULL;
-
-  return _enum;
-}
-
-
 struct FuncSig* parse_funcsig(struct Parser* parser) {
   struct FuncSig* fs = malloc(sizeof(*fs));
 
@@ -124,11 +108,6 @@ struct Declaration* parse_declaration(struct Parser* parser) {
     decl->type = DECL_UNION;
     decl->as._union = parse_union(parser);
 
-  } else if(MATCH_TOKEN(parser, ENUM)) {
-    RETURN_ERROR(parser, ERROR_UNIMPLEMENTED);
-    decl->type = DECL_ENUM;
-    decl->as._enum = parse_enum(parser);
-
   } else if(MATCH_TOKEN(parser, FUNCTION)) {
     decl->type = DECL_FUNC;
     decl->as.function = parse_function(parser);
@@ -170,16 +149,6 @@ void print_union(const struct Union* ast) {
   printf("(union ");
   if(ast->name) printf("%s ", ast->name);
   if(ast->fields) print_types(ast->fields);
-  printf(")");
-}
-
-
-void print_enum(const struct Enum* ast) {
-  if(ast == NULL) { printf("(NULL)"); return; }
-
-  printf("(enum ");
-  if(ast->name) printf("%s ", ast->name);
-  if(ast->fields) print_assigns(ast->fields);
   printf(")");
 }
 
@@ -226,7 +195,6 @@ void print_declaration(const struct Declaration* ast) {
     case DECL_VAR:    print_variable(ast->as.var);    break;
     case DECL_STRUCT: print_struct(ast->as._struct);  break;
     case DECL_UNION:  print_union(ast->as._union);    break;
-    case DECL_ENUM:   print_enum(ast->as._enum);      break;
     case DECL_FUNC:   print_func(ast->as.function);   break;
     case DECL_INC:    print_include(ast->as.include); break;
   }

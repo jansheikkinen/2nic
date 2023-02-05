@@ -74,6 +74,7 @@ struct ArrayInit {
   struct Expression* elements;
 };
 
+
 struct ExprList {
   struct Expression* current;
   struct Expression* next;
@@ -84,16 +85,11 @@ struct Cast {
   struct Type* type;
 };
 
-struct AssignList {
-  struct Expression* current;
-  struct AssignList* next;
-};
-
 struct Expression {
   enum {
     EXPR_LITERAL, EXPR_UNARY, EXPR_BINARY, EXPR_GROUP, EXPR_CALL, EXPR_FIELD,
-    EXPR_ARRAY_INDEX, EXPR_ARRAY_INIT, EXPR_CAST, EXPR_ASSIGN, EXPR_LIST,
-    EXPR_BLOCK, EXPR_IF, EXPR_WHILE
+    EXPR_ARRAY_INDEX, EXPR_ARRAY_INIT, EXPR_CAST,
+    EXPR_ASSIGN, EXPR_LIST, EXPR_BLOCK, EXPR_IF, EXPR_WHILE
   } type;
   union {
     // Statement Expressions
@@ -101,7 +97,6 @@ struct Expression {
     struct IfWhile ifwhile;
 
     // Normal Expressions
-    struct AssignList* assign;
     struct Cast cast;
     struct ArrayIndex array_index;
     struct ArrayInit array_init;
@@ -117,8 +112,6 @@ struct Expression {
 
 struct Expression* parse_expression(struct Parser*);
 struct Block* parse_block(struct Parser*);
-struct AssignList* parse_assigns(struct Parser*);
 
 void print_expression(const struct Expression*);
-void print_assigns(const struct AssignList*);
 void print_block(const struct Block*);

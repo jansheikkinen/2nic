@@ -44,10 +44,6 @@ struct Type* parse_type(struct Parser* parser) {
     type->as.compound.type = COMP_UNION;
     type->as.compound.as._union = parse_union(parser);
 
-  } else if(MATCH_TOKEN(parser, ENUM)) {
-    type->type = TYPE_COMPOUND;
-    type->as.compound.type = COMP_ENUM;
-    type->as.compound.as._enum = parse_enum(parser);
   } else if(MATCH_TOKEN(parser, STRUCT)) {
     type->type = TYPE_COMPOUND;
     type->as.compound.type = COMP_FUNC;
@@ -92,7 +88,6 @@ static void print_compound(const struct Compound* ast) {
   switch(ast->type) {
     case COMP_STRUCT: print_struct(ast->as._struct); break;
     case COMP_UNION:  print_union(ast->as._union);   break;
-    case COMP_ENUM:   print_enum(ast->as._enum);     break;
     case COMP_FUNC:   print_funcsig(ast->as.sig);    break;
   }
 

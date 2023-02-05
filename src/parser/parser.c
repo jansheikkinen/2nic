@@ -107,6 +107,7 @@ struct AST* parse_file(const char* filename) {
     //   default: break;
     // }
     // printf("\n");
+    // parser.current = lex_token(&parser);
   }
 
   if(!parser.did_panic)
