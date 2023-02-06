@@ -6,7 +6,7 @@ ifeq ($(CC),gcc)
 endif
 INCLUDE = -Iinclude
 
-SRC = $(wildcard src/*.c) $(wildcard src/**/*.c)
+SRC = $(wildcard src/*.c) $(wildcard src/**/*.c) $(wildcard src/**/**/*.c)
 OBJ = $(SRC:.c=.o)
 BUILD = build
 
@@ -19,7 +19,7 @@ dirs:
 	mkdir -p $(BUILD) src tests
 
 run: build
-	$(BUILD)/build
+	$(BUILD)/build $(BUILD)/test.2c
 
 build: $(OBJ)
 	$(CC) $(CFLAGS) $(INCLUDE) -o $(BUILD)/$@ $?

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "../debug.h"
 #include "../util/arraylist.h"
 
 struct Parser;
@@ -51,13 +52,14 @@ struct Parser {
   const char* filename;
   const char* program_index;
   size_t row, col;
+  int flags;
   struct Token previous, current;
   bool is_panic, did_panic; // whether its currently panicking and if it ever did
 };
 
 
 void print_error(struct Parser*, enum ParseErrorType);
-struct AST* parse_file(const char*);
+struct AST* parse_file(const char*, int);
 
 #define RETURN_ERROR(parser, error) \
   ({ if(!(parser)->is_panic) print_error(parser, error); NULL; })

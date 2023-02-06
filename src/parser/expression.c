@@ -424,9 +424,91 @@ static struct Expression* parse_ifwhile(struct Parser* parser) {
 }
 
 
+// this one is fun :) its just a vardecl + while loop in a block
+static struct Expression* parse_for(struct Parser* parser) {
+  EXPECT_TOKEN(parser, LEFT_PAREN, EXPECTED_LEFT_PAREN);
+
+  struct Variable* init;
+  if(MATCH_TOKEN(parser, SEMICOLON))
+    init = NULL;
+  else if(MATCH_TOKEN(parser, LET))
+    init = parse_variable(parser);
+
+  struct Expression* cond;
+  if(MATCH_TOKEN(parser, SEMICOLON))
+    cond = NULL;
+  else {
+    cond = parse_expression(parser);
+    EXPECT_TOKEN(parser, SEMICOLON, EXPECTED_END_OF_STATEMENT);
+  }
+
+  struct Expression* inc;
+  if(MATCH_TOKEN(parser, RIGHT_PAREN))
+    inc = NULL;
+  else {
+    inc = parse_expression(parser);
+    EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_RIGHT_PAREN);
+  }
+
+  struct Expression* body = parse_expression(parser);
+
+  if(inc) {
+    struct Statement stmt;
+    stmt.type = STMT_EXPR;
+    stmt.as.expr = body;
+
+    struct Statement inc_stmt;
+    inc_stmt.type = STMT_EXPR;
+    inc_stmt.as.expr = inc;
+
+    struct Expression* new_body = malloc(sizeof(*new_body));
+    new_body->type = EXPR_BLOCK;
+    NEW_ARRAYLIST(&new_body->as.block.stmts);
+
+    APPEND_ARRAYLIST(&new_body->as.block.stmts, stmt);
+    APPEND_ARRAYLIST(&new_body->as.block.stmts, inc_stmt);
+
+    body = new_body;
+  }
+
+  if(!cond) cond = ALLOC_LITERAL(BOOL, bool, true);
+  struct Expression* _while = malloc(sizeof(*_while));
+  _while->type = EXPR_WHILE;
+  _while->as.ifwhile = (struct IfWhile){
+    .condition = cond,
+    .body = body,
+    .else_clause = NULL,
+  };
+  body = _while;
+
+  if(init) {
+    struct Statement init_stmt;
+    init_stmt.type = STMT_VAR;
+    init_stmt.as.var = init;
+
+    struct Statement body_stmt;
+    body_stmt.type = STMT_EXPR;
+    body_stmt.as.expr = body;
+
+    struct Expression* new_body = malloc(sizeof(*new_body));
+    new_body->type = EXPR_BLOCK;
+    NEW_ARRAYLIST(&new_body->as.block.stmts);
+    APPEND_ARRAYLIST(&new_body->as.block.stmts, init_stmt);
+    APPEND_ARRAYLIST(&new_body->as.block.stmts, body_stmt);
+
+    body = new_body;
+  }
+
+  return body;
+}
+
+
 struct Expression* parse_expression(struct Parser* parser) {
   if(MATCH_TOKEN(parser, IF) || MATCH_TOKEN(parser, WHILE))
     return parse_ifwhile(parser);
+
+  if(MATCH_TOKEN(parser, FOR))
+    return parse_for(parser);
 
   if(MATCH_TOKEN(parser, LEFT_CURLY))
     return parse_block_expression(parser);

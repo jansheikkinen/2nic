@@ -77,11 +77,36 @@ static void print_ast(const struct AST* ast) {
   }
 }
 
-struct AST* parse_file(const char* filename) {
+static void print_token(struct Parser* parser) {
+  if(parser->current.type == TOKEN_EOF) return;
+
+  printf("%24s %02u (%02zu, %02zu) | ",
+    TOKEN_STR(&parser->current), parser->current.type,
+    parser->row, parser->col);
+
+  switch(parser->current.type) {
+    case TOKEN_IDENTIFIER_LIT:
+    case TOKEN_STRING_LIT: printf("\"%s\"",parser->current.as.string);   break;
+    case TOKEN_INT_LIT:    printf("%zd",   parser->current.as.integer);  break;
+    case TOKEN_FLOAT_LIT:  printf("%f",    parser->current.as.floating); break;
+    case TOKEN_CHAR_LIT:   printf("'%c'",  parser->current.as.character);break;
+    case TOKEN_BOOL_LIT:   printf("%d",    parser->current.as.boolean);  break;
+    default: break;
+  }
+  printf("\n");
+}
+
+static void print_tokens(struct Parser* parser) {
+  while((parser->current = lex_token(parser)).type != TOKEN_EOF)
+    print_token(parser);
+}
+
+struct AST* parse_file(const char* filename, int flags) {
   struct Parser parser;
   parser.filename = filename;
   parser.col = 0; parser.row = 0;
   parser.is_panic = false;
+  parser.flags = flags;
 
   const char* program = read_file(filename);
   parser.program_index = program;
@@ -89,31 +114,20 @@ struct AST* parse_file(const char* filename) {
   struct AST* ast = malloc(sizeof(*ast));
   NEW_ARRAYLIST(ast);
 
+  if(HAS_FLAG(parser.flags, FLAG_LEX)) {
+    print_tokens(&parser);
+    parser.program_index = program;
+  }
+
   parser.current = lex_token(&parser);
   while(!MATCH_TOKEN(&parser, EOF)) {
     APPEND_ARRAYLIST(ast, parse_declaration(&parser));
-
-    // printf("%24s %02u (%02zu, %02zu) | ",
-    //     TOKEN_STR(&parser.current), parser.current.type,
-    //     parser.row, parser.col);
-    //
-    // switch(parser.current.type) {
-    //   case TOKEN_IDENTIFIER_LIT:
-    //   case TOKEN_STRING_LIT: printf("\"%s\"",parser.current.as.string);   break;
-    //   case TOKEN_INT_LIT:    printf("%zd",   parser.current.as.integer);  break;
-    //   case TOKEN_FLOAT_LIT:  printf("%f",    parser.current.as.floating); break;
-    //   case TOKEN_CHAR_LIT:   printf("'%c'",  parser.current.as.character);break;
-    //   case TOKEN_BOOL_LIT:   printf("%d",    parser.current.as.boolean);  break;
-    //   default: break;
-    // }
-    // printf("\n");
-    // parser.current = lex_token(&parser);
   }
-
-  if(!parser.did_panic)
-    print_ast(ast);
 
   free((char*)program);
 
-  return ast;
+  if(HAS_FLAG(parser.flags, FLAG_AST)) print_ast(ast);
+
+  if(!parser.did_panic) return ast;
+  else return NULL;
 }
