@@ -1,4 +1,4 @@
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wextra -Wformat=2 -Wshadow \
 				 -Wwrite-strings -Wstrict-prototypes -g $(LIBS)
 ifeq ($(CC),gcc)

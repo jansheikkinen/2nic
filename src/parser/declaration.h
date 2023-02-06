@@ -20,7 +20,7 @@ struct Union {
 struct FuncSig {
   const char* name;
   struct VarDeclList* args;
-  struct TypeList* returns;
+  struct Type* returns;
 };
 
 struct Function {

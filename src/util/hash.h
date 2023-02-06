@@ -7,8 +7,8 @@
 uint64_t hash(const uint8_t*);
 
 struct HashItem {
-  const uint8_t* key;
-  size_t value;
+  const char* key;
+  uintptr_t value;
 };
 
 struct HashMap {
@@ -20,9 +20,9 @@ struct HashMap {
 void hm_init(struct HashMap*);
 void hm_destroy(struct HashMap*);
 
-size_t hm_get(const struct HashMap*, const uint8_t*);
+uintptr_t hm_get(const struct HashMap*, const char*);
 
-void hm_set(struct HashMap*, const uint8_t*, size_t);
-void hm_remove(struct HashMap*, const uint8_t*);
+void hm_set(struct HashMap*, const char*, uintptr_t);
+void hm_remove(struct HashMap*, const char*);
 
 #endif

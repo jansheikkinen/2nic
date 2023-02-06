@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "declaration.h"
 #include "expression.h"
+#include "type.h"
 
 struct Variable* parse_variable(struct Parser* parser) {
   struct Variable* variable = malloc(sizeof(*variable));
@@ -62,7 +63,7 @@ struct FuncSig* parse_funcsig(struct Parser* parser) {
 
   EXPECT_TOKEN(parser, RIGHT_PAREN, EXPECTED_RIGHT_PAREN);
 
-  fs->returns = parse_types(parser);
+  fs->returns = parse_type(parser);
 
   return fs;
 }
@@ -164,7 +165,7 @@ void print_funcsig(const struct FuncSig* ast) {
   else printf("void) ");
 
   printf("(");
-  if(ast->returns) { print_types(ast->returns); printf(") "); }
+  if(ast->returns) { print_type(ast->returns); printf(") "); }
   else printf("void) ");
 
   printf("\b)");

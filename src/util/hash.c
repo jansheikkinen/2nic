@@ -34,32 +34,32 @@ void hm_destroy(struct HashMap* hm) {
   free(hm->values);
 }
 
-static size_t hm_index(const struct HashMap* hm, const uint8_t* key) {
-  return hash(key) & (hm->capacity - 1);
+static size_t hm_index(const struct HashMap* hm, const char* key) {
+  return hash((uint8_t*)key) & (hm->capacity - 1);
 }
 
-static struct HashItem* _hm_get(const struct HashMap* hm, const uint8_t* key) {
+static struct HashItem* _hm_get(const struct HashMap* hm, const char* key) {
   size_t index = hm_index(hm, key);
   struct HashItem* item = &hm->values[index];
 
   while((item = &hm->values[index++ & (hm->capacity - 1)])->key)
-    if(!strcmp((const char*)item->key, (const char*)key)) return item;
+    if(!strcmp(item->key, key)) return item;
 
   return item;
 }
 
-size_t hm_get(const struct HashMap* hm, const uint8_t* key) {
+uintptr_t hm_get(const struct HashMap* hm, const char* key) {
   struct HashItem* item = _hm_get(hm, key);
   if(item->key) return item->value;
   return 0;
 }
 
-static void _hm_set(struct HashMap* hm, const uint8_t* key, size_t value) {
+static void _hm_set(struct HashMap* hm, const char* key, size_t value) {
   struct HashItem* item = _hm_get(hm, key);
   if(!item->key) {
     hm->length += 1;
-    item->key = calloc(sizeof(uint8_t), strlen((const char*)key) + 1);
-    strcpy((char*)item->key, (char*)key);
+    item->key = calloc(sizeof(*item->key), strlen(key) + 1);
+    strcpy((char*)item->key, key);
   }
   item->value = value;
 }
@@ -77,15 +77,16 @@ static void hm_expand(struct HashMap* hm) {
   free(old);
 }
 
-void hm_set(struct HashMap* hm, const uint8_t* key, size_t value) {
+void hm_set(struct HashMap* hm, const char* key, size_t value) {
   if(hm->length >= (hm->capacity >> 1)) hm_expand(hm);
   _hm_set(hm, key, value);
 }
 
-void hm_remove(struct HashMap* hm, const uint8_t* key) {
+void hm_remove(struct HashMap* hm, const char* key) {
   struct HashItem* item = _hm_get(hm, key);
 
   if(item->key) {
+    free((char*)item->key);
     hm->length -= 1;
     item->key = NULL;
     item->value = 0;

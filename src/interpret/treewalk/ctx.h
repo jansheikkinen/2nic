@@ -20,3 +20,6 @@ DEFINE_ARRAYLIST(StackFrames, struct Frame);
 struct Interpreter {
   struct StackFrames frames;
 };
+
+void push_frame(struct Interpreter*, const char*);
+void pop_frame(struct Interpreter*);
