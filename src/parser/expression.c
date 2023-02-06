@@ -8,22 +8,22 @@
 
 // ### ALLOCATION FUNCTIONS ### //
 
-static struct Expression* alloc_literal(enum LiteralType type, void* value) {
+static struct Expression* alloc_literal(enum ValueType type, void* value) {
   struct Expression* expr = malloc(sizeof(*expr));
 
-  struct Literal literal = { .type = type };
+  struct Value literal = { .type = type };
 
   switch(type) {
-  case LIT_BOOL:
+  case VAL_BOOL:
     literal.as.boolean = *(bool*)value; break;
-  case LIT_INT:
+  case VAL_INT:
     literal.as.integer = *(size_t*)value; break;
-  case LIT_FLOAT:
+  case VAL_FLOAT:
     literal.as.floating = *(double*)value; break;
-  case LIT_CHAR:
+  case VAL_CHAR:
     literal.as.character = *(char*)value; break;
-  case LIT_STRING:
-  case LIT_IDENTIFIER:
+  case VAL_STRING:
+  case VAL_IDENTIFIER:
     literal.as.string = *(char**)value; break;
   }
 
@@ -109,7 +109,7 @@ static struct Expression* alloc_cast(struct Expression* expr,
 
 
 #define ALLOC_LITERAL(tag, _type, value) \
-  ({ _type a = value; alloc_literal(LIT_##tag, &a); })
+  ({ _type a = value; alloc_literal(VAL_##tag, &a); })
 
 
 
@@ -526,16 +526,16 @@ struct Expression* parse_expression(struct Parser* parser) {
 
 // ### PRINTING FUNCTIONS ## //
 
-static void print_literal(const struct Literal* ast) {
+static void print_literal(const struct Value* ast) {
   if(ast == NULL) { printf("(NULL)"); return; }
 
   switch(ast->type) {
-  case LIT_BOOL:       printf("%s", ast->as.boolean? "true" : "false"); break;
-  case LIT_INT:        printf("%zu", ast->as.integer);                  break;
-  case LIT_FLOAT:      printf("%f", ast->as.floating);                  break;
-  case LIT_CHAR:       printf("'%c'", ast->as.character);               break;
-  case LIT_STRING:     printf("\"%s\"", ast->as.string);                break;
-  case LIT_IDENTIFIER: printf("%s", ast->as.string);                    break;
+  case VAL_BOOL:       printf("%s", ast->as.boolean? "true" : "false"); break;
+  case VAL_INT:        printf("%zu", ast->as.integer);                  break;
+  case VAL_FLOAT:      printf("%f", ast->as.floating);                  break;
+  case VAL_CHAR:       printf("'%c'", ast->as.character);               break;
+  case VAL_STRING:     printf("\"%s\"", ast->as.string);                break;
+  case VAL_IDENTIFIER: printf("%s", ast->as.string);                    break;
   }
 }
 

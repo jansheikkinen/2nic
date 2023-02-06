@@ -1,5 +1,6 @@
 // interpreter.c
 
+#include "ctx.h"
 #include "interpreter.h"
 #include "declaration.h"
 

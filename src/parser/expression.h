@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../util/arraylist.h" // my greatest shame :(
+#include "../value.h"
 #include "parser.h"
 
 struct Statement {
@@ -23,21 +24,6 @@ struct IfWhile {
   struct Expression* condition;
   struct Expression* body;
   struct Expression* else_clause;
-};
-
-enum LiteralType {
-  LIT_BOOL, LIT_INT, LIT_FLOAT, LIT_CHAR, LIT_STRING, LIT_IDENTIFIER
-};
-
-struct Literal {
-  enum LiteralType type;
-  union {
-    const char* string;
-    size_t integer;
-    double floating;
-    char character;
-    bool boolean;
-  } as;
 };
 
 struct Unary {
@@ -106,7 +92,7 @@ struct Expression {
     struct Grouping group;
     struct Binary binary;
     struct Unary unary;
-    struct Literal literal;
+    struct Value literal;
   } as;
 };
 
